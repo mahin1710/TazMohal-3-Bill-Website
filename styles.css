@@ -1,0 +1,198 @@
+/* Reset & basic */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f9f9f9;
+  color: #333;
+  line-height: 1.6;
+}
+header {
+  background-color: #004d66;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+header p {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+/* Month selector */
+.month-select {
+  margin-top: 10px;
+  text-align: center;
+}
+.month-select label {
+  margin-right: 6px;
+  font-weight: bold;
+}
+.month-select input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* Theme toggle button */
+#themeToggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #ffffff;
+  color: #004d66;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* Main container */
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: auto;
+}
+h2 {
+  margin-bottom: 20px;
+  color: #004d66;
+}
+
+/* Flats grid */
+.flat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+.flat-row {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease;
+}
+.flat-row:hover {
+  transform: scale(1.01);
+}
+.flat-row label {
+  display: block;
+  margin-bottom: 10px;
+}
+.flat-row input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+.total-bill {
+  font-weight: bold;
+  color: #006600;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+/* Bill breakdown */
+.bill-details {
+  margin-top: 12px;
+  padding: 10px;
+  background: #f1f9ff;
+  border-left: 4px solid #004d66;
+  border-radius: 6px;
+  font-size: 14px;
+}
+.bill-details p {
+  margin: 4px 0;
+}
+.bill-details strong {
+  color: #004d66;
+}
+
+/* Actions */
+.actions {
+  text-align: center;
+  margin-top: 30px;
+}
+.actions button {
+  background: #006699;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  margin: 5px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.actions button:hover {
+  background: #004d66;
+}
+
+/* Summary table */
+.summary-table, table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+  margin-top: 20px;
+}
+.summary-table th, .summary-table td, table th, table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+.summary-table th, table th {
+  background-color: #004d66;
+  color: white;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .flat-grid {
+    grid-template-columns: 1fr;
+  }
+  header h1 {
+    font-size: 22px;
+  }
+  h2 {
+    font-size: 20px;
+  }
+  .actions button {
+    width: 90%;
+    margin: 10px 0;
+  }
+}
+
+/* Dark Mode */
+.dark-mode {
+  background: #1e1e1e;
+  color: #e4e4e4;
+}
+.dark-mode header {
+  background: #111;
+}
+.dark-mode .flat-row {
+  background: #2a2a2a;
+  color: #fff;
+}
+.dark-mode input {
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+}
+.dark-mode .bill-details {
+  background: #2d2d2d;
+  border-left: 4px solid #00bcd4;
+}
+.dark-mode .summary-table, .dark-mode table {
+  background: #2a2a2a;
+  color: white;
+}
+.dark-mode .summary-table th, .dark-mode table th {
+  background: #111;
+}
