@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Settings & Backups — TazMohal-3</title>
+  <link rel="stylesheet" href="css/modern.css" />
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-info">
+        <h1>⚙️ System Settings & Data Protection</h1>
+        <p>TazMohal-3 — Property Administration</p>
+      </div>
+
+      <div class="header-controls">
+        <nav class="nav-links">
+          <a href="index.html" class="nav-link">Dashboard</a>
+          <a href="summary.html" class="nav-link">Summary</a>
+          <a href="details.html" class="nav-link">Electricity Details</a>
+          <a href="history.html" class="nav-link">History</a>
+          <a href="settings.html" class="nav-link active">Settings & Backups</a>
+        </nav>
+
+        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Section 1: Tariff & Property Settings -->
+    <section class="flat-card" style="margin-bottom: 24px;">
+      <div class="flat-card-header">
+        <div class="flat-card-title">
+          <h3>⚡ Utility Tariff & Property Information</h3>
+        </div>
+        <button class="btn btn-primary" onclick="saveGeneralSettings()">💾 Save Tariff Settings</button>
+      </div>
+
+      <div class="input-group-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="input-field">
+          <label>Electricity Unit Rate (৳ / Unit)</label>
+          <input type="number" step="0.5" id="cfgUnitRate" value="10" />
+        </div>
+        <div class="input-field">
+          <label>Base Meter Charge (৳ / Flat)</label>
+          <input type="number" step="1" id="cfgMeterCharge" value="60" />
+        </div>
+        <div class="input-field">
+          <label>Currency Symbol</label>
+          <input type="text" id="cfgCurrency" value="৳" />
+        </div>
+        <div class="input-field">
+          <label>Property Name</label>
+          <input type="text" id="cfgPropName" value="TazMohal-3" />
+        </div>
+        <div class="input-field full-width">
+          <label>Property Address</label>
+          <input type="text" id="cfgPropAddress" value="Uttarkhan, Uttara, Dhaka-1230, Bangladesh" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Flats & Tenant Directory -->
+    <section class="flat-card" style="margin-bottom: 24px;">
+      <div class="flat-card-header">
+        <div class="flat-card-title">
+          <h3>🏠 Flat & Tenant Configuration (Flats 1 to 9)</h3>
+        </div>
+      </div>
+
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 12px;">
+        Assign tenant names, contact numbers, and default house rents. These defaults will auto-fill new billing months.
+      </p>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Flat</th>
+              <th>Tenant Name</th>
+              <th>Contact Phone</th>
+              <th>Default Rent (৳)</th>
+              <th>Notes / Remarks</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="flatsConfigTableBody">
+            <tr><td colspan="6" style="text-align: center; padding: 20px;">Loading flats...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3: Backup & Restore Manager -->
+    <section class="flat-card" style="margin-bottom: 24px;">
+      <div class="flat-card-header">
+        <div class="flat-card-title">
+          <h3>🛡️ Database Backup & Disaster Recovery</h3>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-success" onclick="createInstantBackup()">⚡ Create New Snapshot</button>
+          <a href="/api/backup/export-json" class="btn btn-outline" download>📥 Export JSON</a>
+        </div>
+      </div>
+
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom: 16px;">
+        Automatic and manual snapshots are stored securely on the local server filesystem. Backups are never pushed to GitHub.
+      </p>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Snapshot Filename</th>
+              <th>Format</th>
+              <th>File Size</th>
+              <th>Created Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="backupsTableBody">
+            <tr><td colspan="5" style="text-align: center; padding: 20px;">Loading backups...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 4: Security & Password Management -->
+    <section class="flat-card" style="margin-bottom: 24px;">
+      <div class="flat-card-header">
+        <div class="flat-card-title">
+          <h3>🔐 Admin Password Security</h3>
+        </div>
+      </div>
+
+      <form id="passwordForm" onsubmit="handlePasswordChange(event)" style="max-width: 450px;">
+        <div class="input-field" style="margin-bottom: 12px;">
+          <label>Current Password</label>
+          <input type="password" id="currPassword" required />
+        </div>
+        <div class="input-field" style="margin-bottom: 12px;">
+          <label>New Password (min 6 characters)</label>
+          <input type="password" id="newPassword" required minlength="6" />
+        </div>
+        <div class="input-field" style="margin-bottom: 16px;">
+          <label>Confirm New Password</label>
+          <input type="password" id="confirmPassword" required minlength="6" />
+        </div>
+        <button type="submit" class="btn btn-primary">Update Admin Password</button>
+      </form>
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>TazMohal-3 Billing Portal | Uttarkhan, Uttara, Dhaka</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadSettings();
+      loadFlats();
+      loadBackups();
+    });
+
+    function initTheme() {
+      const saved = localStorage.getItem('theme') || 'light';
+      applyTheme(saved);
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark-mode');
+        const next = isDark ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem('theme', next);
+      });
+    }
+
+    function applyTheme(theme) {
+      const btn = document.getElementById('themeToggle');
+      if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        btn.textContent = '☀️';
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'light');
+        btn.textContent = '🌙';
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await API.getSettings();
+        const s = res.settings;
+        document.getElementById('cfgUnitRate').value = s.unit_rate || '10';
+        document.getElementById('cfgMeterCharge').value = s.meter_charge || '60';
+        document.getElementById('cfgCurrency').value = s.currency_symbol || '৳';
+        document.getElementById('cfgPropName').value = s.property_name || 'TazMohal-3';
+        document.getElementById('cfgPropAddress').value = s.property_address || 'Uttarkhan, Uttara, Dhaka-1230, Bangladesh';
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    async function saveGeneralSettings() {
+      const payload = {
+        unit_rate: document.getElementById('cfgUnitRate').value,
+        meter_charge: document.getElementById('cfgMeterCharge').value,
+        currency_symbol: document.getElementById('cfgCurrency').value,
+        property_name: document.getElementById('cfgPropName').value,
+        property_address: document.getElementById('cfgPropAddress').value
+      };
+
+      try {
+        await API.updateSettings(payload);
+        alert('Tariff & property settings updated successfully!');
+      } catch (err) {
+        alert('Failed to update settings: ' + err.message);
+      }
+    }
+
+    async function loadFlats() {
+      const tbody = document.getElementById('flatsConfigTableBody');
+      try {
+        const res = await API.getFlats();
+        tbody.innerHTML = '';
+        res.flats.forEach(flat => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><strong>${flat.flat_name}</strong></td>
+            <td><input type="text" id="tenant_${flat.id}" value="${flat.tenant_name || ''}" style="width:100%; padding:6px; border:1px solid var(--border); border-radius:4px;" placeholder="Tenant Name"></td>
+            <td><input type="text" id="phone_${flat.id}" value="${flat.phone || ''}" style="width:100%; padding:6px; border:1px solid var(--border); border-radius:4px;" placeholder="01XXXXXXXXX"></td>
+            <td><input type="number" id="rent_${flat.id}" value="${flat.default_rent || 0}" style="width:100px; padding:6px; border:1px solid var(--border); border-radius:4px;"></td>
+            <td><input type="text" id="notes_${flat.id}" value="${flat.notes || ''}" style="width:100%; padding:6px; border:1px solid var(--border); border-radius:4px;" placeholder="Notes"></td>
+            <td>
+              <button class="btn btn-outline" style="padding:4px 10px; font-size:0.8rem;" onclick="saveFlatMeta(${flat.id})">Save</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--danger)">Failed to load flats: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function saveFlatMeta(id) {
+      const tenant = document.getElementById(`tenant_${id}`).value;
+      const phone = document.getElementById(`phone_${id}`).value;
+      const rent = document.getElementById(`rent_${id}`).value;
+      const notes = document.getElementById(`notes_${id}`).value;
+
+      try {
+        await API.updateFlat(id, { tenant_name: tenant, phone, default_rent: rent, notes });
+        alert(`Flat ${id} metadata saved successfully!`);
+      } catch (err) {
+        alert('Failed to save flat: ' + err.message);
+      }
+    }
+
+    async function loadBackups() {
+      const tbody = document.getElementById('backupsTableBody');
+      try {
+        const res = await API.getBackups();
+        tbody.innerHTML = '';
+        if (!res.backups || res.backups.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No backups available yet. Click "Create New Snapshot" above.</td></tr>';
+          return;
+        }
+
+        res.backups.forEach(b => {
+          const row = document.createElement('tr');
+          const date = new Date(b.createdAt).toLocaleString();
+          const sizeKb = (b.size / 1024).toFixed(1) + ' KB';
+
+          row.innerHTML = `
+            <td><code>${b.filename}</code></td>
+            <td><span class="tenant-badge">${b.type.toUpperCase()}</span></td>
+            <td>${sizeKb}</td>
+            <td>${date}</td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="/api/backup/download/${b.filename}" class="btn btn-outline" style="padding:4px 8px; font-size:0.75rem;" download>Download</a>
+                <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="restoreBackupFile('${b.filename}')">Restore</button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--danger)">Failed to load backups: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function createInstantBackup() {
+      try {
+        const res = await API.createBackup();
+        alert(`Backup snapshot created successfully: ${res.filename}`);
+        await loadBackups();
+      } catch (err) {
+        alert('Backup creation failed: ' + err.message);
+      }
+    }
+
+    async function restoreBackupFile(filename) {
+      const confirmFirst = confirm(`WARNING: Are you sure you want to restore from "${filename}"?\n\nA safety checkpoint backup will automatically be saved before restoring.`);
+      if (!confirmFirst) return;
+
+      try {
+        const res = await API.restoreBackup(filename);
+        alert(`Restore completed successfully!\nSafety backup saved as: ${res.safetyBackup}`);
+        location.reload();
+      } catch (err) {
+        alert('Restore failed: ' + err.message);
+      }
+    }
+
+    async function handlePasswordChange(e) {
+      e.preventDefault();
+      const curr = document.getElementById('currPassword').value;
+      const next = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
+
+      if (next !== confirm) {
+        alert('New passwords do not match!');
+        return;
+      }
+
+      try {
+        await API.request('/api/auth/change-password', {
+          method: 'POST',
+          body: JSON.stringify({ currentPassword: curr, newPassword: next })
+        });
+        alert('Password changed successfully!');
+        e.target.reset();
+      } catch (err) {
+        alert('Password change failed: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>

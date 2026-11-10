@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TazMohal-3 — Residential Billing Management Portal</title>
+  <link rel="stylesheet" href="css/modern.css" />
+  <!-- SheetJS library for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-info">
+        <h1>🏢 TazMohal-3 Billing Portal</h1>
+        <p>Uttarkhan, Uttara, Dhaka-1230, Bangladesh</p>
+      </div>
+
+      <div class="header-controls">
+        <div class="month-picker-wrap">
+          <label for="monthSelector">📅 Billing Month:</label>
+          <input type="month" id="monthSelector" />
+        </div>
+
+        <nav class="nav-links">
+          <a href="index.html" class="nav-link active">Dashboard</a>
+          <a href="summary.html" class="nav-link">Summary</a>
+          <a href="details.html" class="nav-link">Electricity Details</a>
+          <a href="history.html" class="nav-link">History</a>
+          <a href="settings.html" class="nav-link">Settings & Backups</a>
+        </nav>
+
+        <span class="save-badge saved" id="globalSaveBadge">
+          <span>💾</span> Ready
+        </span>
+
+        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+
+    <!-- Migration Alert Banner (shown only if legacy localStorage data exists) -->
+    <div class="alert-banner" id="migrationBanner" style="display: none;">
+      <div>
+        <strong>📦 Historical Browser Data Detected:</strong>
+        <span id="migrationMsg">Found records from previous sessions.</span>
+      </div>
+      <button onclick="runLocalStorageMigration()">Migrate to Database</button>
+    </div>
+
+    <!-- Summary Metrics Cards -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">Total Monthly Rent</span>
+        <span class="metric-value highlight-blue" id="metricTotalRent">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Electricity</span>
+        <span class="metric-value highlight-blue" id="metricTotalElec">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Payable</span>
+        <span class="metric-value" id="metricTotalPayable">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Collected</span>
+        <span class="metric-value highlight-green" id="metricTotalPaid">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Outstanding Due</span>
+        <span class="metric-value highlight-red" id="metricTotalDue">৳ 0.00</span>
+      </div>
+    </section>
+
+    <!-- Action Toolbar -->
+    <section class="action-bar">
+      <div style="font-size: 0.95rem; font-weight: 600; color: var(--primary);">
+        ⚡ Live Auto-Save Enabled (Type in any field to automatically save)
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-outline" onclick="calculateAll()">⚡ Recalculate All</button>
+        <button class="btn btn-primary" onclick="saveAllData()">💾 Save All</button>
+        <button class="btn btn-success" onclick="downloadMonthlyExcel()">📥 Download Month Excel</button>
+        <a href="summary.html" class="btn btn-outline">📊 View Summary</a>
+      </div>
+    </section>
+
+    <!-- 9 Flat Billing Cards Grid -->
+    <section class="flat-grid" id="flatGrid">
+      <!-- Populated dynamically by app.js -->
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <p><strong>TazMohal-3 Billing Management System v2.0</strong> | Developed for TazMohal-3, Uttarkhan, Uttara, Dhaka</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/reports.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

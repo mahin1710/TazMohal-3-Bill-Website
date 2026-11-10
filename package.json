@@ -1,0 +1,26 @@
+{
+  "name": "tazmohal-3-billing",
+  "version": "2.0.0",
+  "description": "Modern, secure residential property billing management system for TazMohal-3",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "backup": "node server/backup.js"
+  },
+  "keywords": [
+    "billing",
+    "property-management",
+    "rent-calculator",
+    "electricity-bill"
+  ],
+  "author": "Md. Mahedi Hasan Mahin",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
+  }
+}

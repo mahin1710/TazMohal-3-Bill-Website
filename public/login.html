@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Login — TazMohal-3</title>
+  <link rel="stylesheet" href="css/modern.css" />
+  <style>
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #004d66 0%, #0f172a 100%);
+    }
+    .login-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border);
+    }
+    .login-brand {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-brand h1 {
+      font-size: 1.6rem;
+      color: var(--primary);
+      margin-bottom: 6px;
+    }
+    .login-brand p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-brand">
+        <h1>🏢 TazMohal-3</h1>
+        <p>Residential Billing Management Portal</p>
+      </div>
+
+      <div id="loginAlert" style="display: none; padding: 10px; border-radius: 6px; margin-bottom: 16px; font-size: 0.85rem; background: var(--danger-bg); color: var(--danger); border: 1px solid #fca5a5;"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="input-field" style="margin-bottom: 16px;">
+          <label for="username">Username</label>
+          <input type="text" id="username" required autocomplete="username" placeholder="e.g. admin" />
+        </div>
+
+        <div class="input-field" style="margin-bottom: 24px;">
+          <label for="password">Password</label>
+          <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px;">
+          Secure Sign In
+        </button>
+      </form>
+
+      <div style="margin-top: 20px; text-align: center; font-size: 0.8rem; color: var(--text-muted);">
+        <p>Default credentials: <code>admin</code> / <code>admin123</code></p>
+        <p style="margin-top: 4px;">Change your password in Settings after login.</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    async function handleLogin(e) {
+      e.preventDefault();
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value;
+      const alertBox = document.getElementById('loginAlert');
+
+      alertBox.style.display = 'none';
+
+      try {
+        await API.login(user, pass);
+        window.location.href = 'index.html';
+      } catch (err) {
+        alertBox.textContent = err.message || 'Login failed. Please check credentials.';
+        alertBox.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>

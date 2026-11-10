@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Billing History & Archives — TazMohal-3</title>
+  <link rel="stylesheet" href="css/modern.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-info">
+        <h1>📜 Billing History & Archives</h1>
+        <p>TazMohal-3 — Uttarkhan, Uttara, Dhaka-1230</p>
+      </div>
+
+      <div class="header-controls">
+        <nav class="nav-links">
+          <a href="index.html" class="nav-link">Dashboard</a>
+          <a href="summary.html" class="nav-link">Summary</a>
+          <a href="details.html" class="nav-link">Electricity Details</a>
+          <a href="history.html" class="nav-link active">History</a>
+          <a href="settings.html" class="nav-link">Settings & Backups</a>
+        </nav>
+
+        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- Top Overview Cards -->
+    <section class="metrics-grid">
+      <div class="metric-card">
+        <span class="metric-label">Months Recorded</span>
+        <span class="metric-value highlight-blue" id="histTotalMonths">0</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Electricity Billed</span>
+        <span class="metric-value" id="histTotalElec">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total House Rent Billed</span>
+        <span class="metric-value" id="histTotalRent">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Lifetime Billed</span>
+        <span class="metric-value" id="histTotalPayable">৳ 0.00</span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Total Lifetime Collected</span>
+        <span class="metric-value highlight-green" id="histTotalPaid">৳ 0.00</span>
+      </div>
+    </section>
+
+    <!-- Toolbar & Yearly Export -->
+    <section class="action-bar">
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <label style="font-weight: 600; font-size: 0.9rem;">Filter Year:</label>
+        <select id="yearFilter" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+          <option value="ALL">All Years</option>
+        </select>
+        <button class="btn btn-success" onclick="downloadYearlyReport()">📥 Export Yearly Master Excel</button>
+      </div>
+
+      <div class="action-buttons">
+        <button class="btn btn-outline" onclick="loadHistory()">🔄 Refresh History</button>
+      </div>
+    </section>
+
+    <!-- History Table -->
+    <div class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Billing Month</th>
+            <th>Flats Tracked</th>
+            <th>Total Units</th>
+            <th>Electricity Bill</th>
+            <th>House Rent</th>
+            <th>Total Due</th>
+            <th>Total Payable</th>
+            <th>Amount Collected</th>
+            <th>Outstanding</th>
+            <th>Last Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="historyTableBody">
+          <tr><td colspan="11" style="text-align: center; padding: 24px;">Loading historical records...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <footer class="app-footer">
+    <p>TazMohal-3 Billing Portal | Uttarkhan, Uttara, Dhaka</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script src="js/reports.js"></script>
+  <script>
+    let rawHistory = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      loadHistory();
+      document.getElementById('yearFilter').addEventListener('change', renderFilteredHistory);
+    });
+
+    function initTheme() {
+      const saved = localStorage.getItem('theme') || 'light';
+      applyTheme(saved);
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark-mode');
+        const next = isDark ? 'light' : 'dark';
+        applyTheme(next);
+        localStorage.setItem('theme', next);
+      });
+    }
+
+    function applyTheme(theme) {
+      const btn = document.getElementById('themeToggle');
+      if (theme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+        btn.textContent = '☀️';
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'light');
+        btn.textContent = '🌙';
+      }
+    }
+
+    async function loadHistory() {
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 24px;">Loading historical records...</td></tr>';
+
+      try {
+        const res = await API.getBillingHistory();
+        rawHistory = res.history || [];
+        populateYearFilter(rawHistory);
+        renderFilteredHistory();
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="11" style="text-align:center; color: var(--danger); padding: 24px;">Failed to load history: ${err.message}</td></tr>`;
+      }
+    }
+
+    function populateYearFilter(list) {
+      const select = document.getElementById('yearFilter');
+      const years = new Set();
+      list.forEach(item => {
+        if (item.month) years.add(item.month.split('-')[0]);
+      });
+
+      select.innerHTML = '<option value="ALL">All Years</option>';
+      Array.from(years).sort().reverse().forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = `Year ${y}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderFilteredHistory() {
+      const selectedYear = document.getElementById('yearFilter').value;
+      const tbody = document.getElementById('historyTableBody');
+      tbody.innerHTML = '';
+
+      const filtered = selectedYear === 'ALL'
+        ? rawHistory
+        : rawHistory.filter(h => h.month.startsWith(selectedYear));
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding: 24px;">No billing records found.</td></tr>';
+        return;
+      }
+
+      let sumElec = 0, sumRent = 0, sumTotal = 0, sumPaid = 0;
+
+      filtered.forEach(h => {
+        sumElec += Number(h.total_electricity) || 0;
+        sumRent += Number(h.total_rent) || 0;
+        sumTotal += Number(h.total_payable) || 0;
+        sumPaid += Number(h.total_paid) || 0;
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><strong>📅 ${h.month}</strong></td>
+          <td>${h.total_flats_recorded} Flats</td>
+          <td>${Number(h.total_units || 0).toFixed(2)}</td>
+          <td>৳ ${Number(h.total_electricity || 0).toFixed(2)}</td>
+          <td>৳ ${Number(h.total_rent || 0).toFixed(2)}</td>
+          <td>৳ ${Number(h.total_due || 0).toFixed(2)}</td>
+          <td><strong>৳ ${Number(h.total_payable || 0).toFixed(2)}</strong></td>
+          <td style="color:var(--success); font-weight:600;">৳ ${Number(h.total_paid || 0).toFixed(2)}</td>
+          <td style="color:${(h.total_outstanding || 0) > 0 ? 'var(--danger)' : 'var(--success)'}; font-weight:600;">৳ ${Number(h.total_outstanding || 0).toFixed(2)}</td>
+          <td style="font-size:0.8rem; color:var(--text-muted);">${h.last_updated || 'N/A'}</td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <a href="index.html" onclick="localStorage.setItem('targetMonth', '${h.month}')" class="btn btn-outline" style="padding:4px 8px; font-size:0.75rem;">Open</a>
+              <button onclick="downloadMonth(${JSON.stringify(h.month)})" class="btn btn-success" style="padding:4px 8px; font-size:0.75rem;">Excel</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById('histTotalMonths').textContent = filtered.length;
+      document.getElementById('histTotalElec').textContent = `৳ ${sumElec.toFixed(2)}`;
+      document.getElementById('histTotalRent').textContent = `৳ ${sumRent.toFixed(2)}`;
+      document.getElementById('histTotalPayable').textContent = `৳ ${sumTotal.toFixed(2)}`;
+      document.getElementById('histTotalPaid').textContent = `৳ ${sumPaid.toFixed(2)}`;
+    }
+
+    async function downloadMonth(month) {
+      try {
+        const data = await API.getMonthBilling(month);
+        Reports.downloadMonthlyExcel(month, data.flats, data.settings);
+      } catch (err) {
+        alert('Download failed: ' + err.message);
+      }
+    }
+
+    async function downloadYearlyReport() {
+      let year = document.getElementById('yearFilter').value;
+      if (year === 'ALL') {
+        year = new Date().getFullYear().toString();
+      }
+      try {
+        const data = await API.getYearlyBilling(year);
+        if (!data.records || data.records.length === 0) {
+          alert(`No records found for year ${year}`);
+          return;
+        }
+        Reports.downloadYearlyExcel(year, data.records, { propertyName: 'TazMohal-3' });
+      } catch (err) {
+        alert('Yearly report download failed: ' + err.message);
+      }
+    }
+  </script>
+</body>
+</html>
