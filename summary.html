@@ -1,251 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Billing Summary — TazMohal-3</title>
-  <link rel="stylesheet" href="public/css/modern.css" />
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Monthly Summary - TazMohal-3</title>
+<link rel="stylesheet" href="styles.css"/>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+<header>
+<h1>TazMohal-3</h1>
+<p>Monthly Rent & Electricity Billing Summary</p>
+<button id="themeToggle">🌙</button>
+<div class="month-select">
+<label>Select Month:</label>
+<input type="month" id="monthSelector" onchange="populateSummary()"/>
+</div>
+</header>
 
-  <!-- App Header -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand-info">
-        <h1>📊 Monthly Billing Summary</h1>
-        <p>TazMohal-3 — Uttarkhan, Uttara, Dhaka-1230</p>
-      </div>
+<main class="container">
+<h2>Monthly Billing Summary Report</h2>
+<div class="actions" style="text-align: left; margin-bottom: 20px;">
+<button onclick="window.location.href='index.html'">🏠 Rent Calculator (Pay Bill)</button>
+<button onclick="window.location.href='paid-bill.html'" style="background:#00796b;">💰 Paid Bill Management</button>
+<button onclick="window.location.href='details.html'">⚡ Electricity Details</button>
+<button onclick="downloadSummaryExcel()" style="background:#2e7d32;">📥 Download Monthly Excel</button>
+</div>
 
-      <div class="header-controls">
-        <div class="month-picker-wrap">
-          <label for="summaryMonthSelector">📅 Month:</label>
-          <input type="month" id="summaryMonthSelector" />
-        </div>
+<table class="summary-table">
+<thead>
+<tr>
+<th>Flat</th><th>Electricity Bill</th><th>House Rent</th><th>Previous Due</th><th>Total Payable</th><th>Amount Paid</th><th>Remaining Due</th><th>Status</th>
+</tr>
+</thead>
+<tbody id="summary-body">
+<tr><td colspan="8">Please select a month</td></tr>
+</tbody>
+<tfoot id="summary-foot" style="font-weight:bold; background:#e0f2f1;">
+</tfoot>
+</table>
+</main>
 
-        <nav class="nav-links">
-          <a href="index.html" class="nav-link">Dashboard</a>
-          <a href="summary.html" class="nav-link active">Summary</a>
-          <a href="details.html" class="nav-link">Electricity Details</a>
-          <a href="public/history.html" class="nav-link">History</a>
-          <a href="public/settings.html" class="nav-link">Settings & Backups</a>
-        </nav>
+<script>
+let currentSummaryData = null;
 
-        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
-      </div>
-    </div>
-  </header>
+async function populateSummary(){
+  const month = document.getElementById('monthSelector').value;
+  const tbody = document.getElementById('summary-body');
+  const tfoot = document.getElementById('summary-foot');
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
+  if (!month) { tbody.innerHTML = '<tr><td colspan="8">Please select a month</td></tr>'; return; }
 
-  <main class="container">
-
-    <section class="metrics-grid">
-      <div class="metric-card">
-        <span class="metric-label">Total Units</span>
-        <span class="metric-value highlight-blue" id="sumUnits">0.00 Units</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-label">Total Electricity Bill</span>
-        <span class="metric-value highlight-blue" id="sumElec">৳ 0.00</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-label">Total House Rent</span>
-        <span class="metric-value" id="sumRent">৳ 0.00</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-label">Total Payable</span>
-        <span class="metric-value" id="sumTotal">৳ 0.00</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-label">Total Collected</span>
-        <span class="metric-value highlight-green" id="sumPaid">৳ 0.00</span>
-      </div>
-      <div class="metric-card">
-        <span class="metric-label">Total Outstanding</span>
-        <span class="metric-value highlight-red" id="sumDue">৳ 0.00</span>
-      </div>
-    </section>
-
-    <section class="action-bar">
-      <div class="action-buttons">
-        <a href="index.html" class="btn btn-outline">⬅ Back to Dashboard</a>
-        <button class="btn btn-success" onclick="downloadExcel()">📥 Download Month Excel</button>
-        <button class="btn btn-primary" onclick="window.print()">🖨️ Print Summary Sheet / PDF</button>
-      </div>
-    </section>
-
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Flat</th>
-            <th>Tenant</th>
-            <th>Previous</th>
-            <th>Current</th>
-            <th>Units</th>
-            <th>Electric Bill</th>
-            <th>House Rent</th>
-            <th>Prior Due</th>
-            <th>Total Payable</th>
-            <th>Amount Paid</th>
-            <th>Outstanding</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="summaryTableBody">
-          <tr><td colspan="13" style="text-align: center; padding: 24px;">Loading data...</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-  </main>
-
-  <footer class="app-footer">
-    <p>TazMohal-3 Billing Portal | Uttarkhan, Uttara, Dhaka</p>
-  </footer>
-
-  <script src="public/js/api.js"></script>
-  <script src="public/js/reports.js"></script>
-  <script>
-    let summaryData = null;
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      initTheme();
-      const selector = document.getElementById('summaryMonthSelector');
-      const now = new Date();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      selector.value = `${now.getFullYear()}-${m}`;
-
-      selector.addEventListener('change', loadSummary);
-      await loadSummary();
-    });
-
-    function initTheme() {
-      const savedTheme = localStorage.getItem('theme') || 'light';
-      applyTheme(savedTheme);
-      document.getElementById('themeToggle').addEventListener('click', () => {
-        const isDark = document.body.classList.contains('dark-mode');
-        const newTheme = isDark ? 'light' : 'dark';
-        applyTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-      });
+  try {
+    const res = await fetch(`/api/billing/month/${month}`);
+    if (res.ok) {
+      const json = await res.json();
+      currentSummaryData = json;
+      renderSummaryRows(json);
+      return;
     }
+  } catch (e) {}
 
-    function applyTheme(theme) {
-      const toggleBtn = document.getElementById('themeToggle');
-      if (theme === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.documentElement.setAttribute('data-theme', 'dark');
-        toggleBtn.textContent = '☀️';
-      } else {
-        document.body.classList.remove('dark-mode');
-        document.documentElement.setAttribute('data-theme', 'light');
-        toggleBtn.textContent = '🌙';
-      }
-    }
+  // Fallback to localStorage
+  const local = JSON.parse(localStorage.getItem('rent_' + month)) || [];
+  if (!local.length) { tbody.innerHTML = '<tr><td colspan="8">No data found for this month</td></tr>'; return; }
 
-    async function loadSummary() {
-      const month = document.getElementById('summaryMonthSelector').value;
-      const tbody = document.getElementById('summaryTableBody');
-      tbody.innerHTML = '<tr><td colspan="13" style="text-align: center; padding: 24px;">Loading data...</td></tr>';
+  let sumElec = 0, sumRent = 0, sumDue = 0, sumTotal = 0;
+  local.forEach(f => {
+    sumElec += Number(f.electricBill) || 0;
+    sumRent += Number(f.rent) || 0;
+    sumDue += Number(f.due) || 0;
+    sumTotal += Number(f.total) || 0;
 
-      try {
-        summaryData = await API.getMonthBilling(month);
-        renderTable(summaryData);
-      } catch (err) {
-        // Fallback to localStorage
-        const local = JSON.parse(localStorage.getItem('rent_' + month)) || [];
-        if (!local.length) {
-          tbody.innerHTML = '<tr><td colspan="13" style="text-align:center; padding: 24px;">No data found for this month</td></tr>';
-          return;
-        }
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>Flat ${f.flat}</strong></td>
+      <td>${(Number(f.electricBill) || 0).toFixed(2)}</td>
+      <td>${(Number(f.rent) || 0).toFixed(2)}</td>
+      <td>${(Number(f.due) || 0).toFixed(2)}</td>
+      <td><strong>${(Number(f.total) || 0).toFixed(2)}</strong></td>
+      <td>0.00</td>
+      <td>${(Number(f.total) || 0).toFixed(2)}</td>
+      <td><span class="badge badge-unpaid">UNPAID</span></td>
+    `;
+    tbody.appendChild(row);
+  });
 
-        let sUnits = 0, sElec = 0, sRent = 0, sDue = 0, sTot = 0;
-        const mappedFlats = local.map(f => {
-          const units = (f.units !== undefined ? f.units : (f.current - f.previous)) || 0;
-          const elec = f.electricBill !== undefined ? f.electricBill : (units * 10 + 60);
-          const rent = f.rent || f.house_rent || 0;
-          const due = f.due || f.due_amount || 0;
-          const total = f.total !== undefined ? f.total : (elec + rent + due);
-          sUnits += units; sElec += elec; sRent += rent; sDue += due; sTot += total;
+  tfoot.innerHTML = `
+    <tr>
+      <td>TOTAL</td>
+      <td>${sumElec.toFixed(2)}</td>
+      <td>${sumRent.toFixed(2)}</td>
+      <td>${sumDue.toFixed(2)}</td>
+      <td>${sumTotal.toFixed(2)}</td>
+      <td>0.00</td>
+      <td>${sumTotal.toFixed(2)}</td>
+      <td>-</td>
+    </tr>
+  `;
+}
 
-          return {
-            flat_id: f.flat,
-            flat_name: `Flat ${f.flat}`,
-            tenant_name: f.tenant_name || '',
-            previous_reading: f.previous || 0,
-            current_reading: f.current || 0,
-            units_used: units,
-            electricity_bill: elec,
-            house_rent: rent,
-            due_amount: due,
-            total_payable: total,
-            amount_paid: f.amount_paid || 0,
-            payment_status: f.payment_status || 'Unpaid'
-          };
-        });
+function renderSummaryRows(data) {
+  const tbody = document.getElementById('summary-body');
+  const tfoot = document.getElementById('summary-foot');
+  tbody.innerHTML = '';
+  tfoot.innerHTML = '';
 
-        summaryData = {
-          month,
-          settings: { currencySymbol: '৳', propertyName: 'TazMohal-3', propertyAddress: 'Uttarkhan, Uttara, Dhaka' },
-          flats: mappedFlats,
-          summary: { totalUnits: sUnits, totalElectricity: sElec, totalHouseRent: sRent, totalDue: sDue, totalPayable: sTot, totalPaid: 0, totalOutstanding: sTot }
-        };
-        renderTable(summaryData);
-      }
-    }
+  data.flats.forEach(f => {
+    let badgeClass = 'badge-unpaid';
+    if (f.payment_status === 'PAID') badgeClass = 'badge-paid';
+    else if (f.payment_status === 'PARTIALLY PAID') badgeClass = 'badge-partial';
 
-    function renderTable(data) {
-      const tbody = document.getElementById('summaryTableBody');
-      tbody.innerHTML = '';
-      const sym = data.settings.currencySymbol || '৳';
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${f.flat_name || 'Flat ' + f.flat_number}</strong></td>
+      <td>${Number(f.electricity_bill || 0).toFixed(2)}</td>
+      <td>${Number(f.house_rent || 0).toFixed(2)}</td>
+      <td>${Number(f.due_amount || 0).toFixed(2)}</td>
+      <td><strong>${Number(f.total_payable || 0).toFixed(2)}</strong></td>
+      <td style="color:#2e7d32;">${Number(f.amount_paid || 0).toFixed(2)}</td>
+      <td style="color:#d32f2f;">${Number(f.remaining_due || 0).toFixed(2)}</td>
+      <td><span class="badge ${badgeClass}">${f.payment_status || 'UNPAID'}</span></td>
+    `;
+    tbody.appendChild(row);
+  });
 
-      document.getElementById('sumUnits').textContent = `${(data.summary.totalUnits || 0).toFixed(2)} Units`;
-      document.getElementById('sumElec').textContent = `${sym} ${(data.summary.totalElectricity || 0).toFixed(2)}`;
-      document.getElementById('sumRent').textContent = `${sym} ${(data.summary.totalHouseRent || 0).toFixed(2)}`;
-      document.getElementById('sumTotal').textContent = `${sym} ${(data.summary.totalPayable || 0).toFixed(2)}`;
-      document.getElementById('sumPaid').textContent = `${sym} ${(data.summary.totalPaid || 0).toFixed(2)}`;
-      document.getElementById('sumDue').textContent = `${sym} ${(data.summary.totalOutstanding || 0).toFixed(2)}`;
+  const s = data.summary;
+  tfoot.innerHTML = `
+    <tr>
+      <td>TOTAL</td>
+      <td>${(s.totalElectricity || 0).toFixed(2)}</td>
+      <td>${(s.totalHouseRent || 0).toFixed(2)}</td>
+      <td>${(s.totalDue || 0).toFixed(2)}</td>
+      <td><strong>${(s.totalPayable || 0).toFixed(2)}</strong></td>
+      <td style="color:#2e7d32;"><strong>${(s.totalPaid || 0).toFixed(2)}</strong></td>
+      <td style="color:#d32f2f;"><strong>${(s.totalOutstanding || 0).toFixed(2)}</strong></td>
+      <td>-</td>
+    </tr>
+  `;
+}
 
-      if (!data.flats || data.flats.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;">No records found for this month</td></tr>';
-        return;
-      }
+function downloadSummaryExcel(){
+  const month = document.getElementById('monthSelector').value;
+  if (!month) { alert('Select a month!'); return; }
+  const table = document.querySelector('table');
+  const wb = XLSX.utils.table_to_book(table, { sheet: 'Summary Report' });
+  XLSX.writeFile(wb, `TazMohal3_Summary_${month}.xlsx`);
+}
 
-      data.flats.forEach(flat => {
-        const row = document.createElement('tr');
-        const outstanding = (Number(flat.total_payable) || 0) - (Number(flat.amount_paid) || 0);
-        const status = flat.payment_status || 'Unpaid';
+// Theme toggle
+const toggleBtn = document.getElementById('themeToggle');
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  });
+}
 
-        row.innerHTML = `
-          <td><strong>${flat.flat_name || `Flat ${flat.flat_number}`}</strong></td>
-          <td>${flat.tenant_name || '<em style="color:var(--text-muted)">Vacant</em>'}</td>
-          <td>${Number(flat.previous_reading).toFixed(2)}</td>
-          <td>${Number(flat.current_reading).toFixed(2)}</td>
-          <td><strong>${Number(flat.units_used).toFixed(2)}</strong></td>
-          <td>${sym} ${Number(flat.electricity_bill).toFixed(2)}</td>
-          <td>${sym} ${Number(flat.house_rent).toFixed(2)}</td>
-          <td>${sym} ${Number(flat.due_amount).toFixed(2)}</td>
-          <td><strong>${sym} ${Number(flat.total_payable).toFixed(2)}</strong></td>
-          <td>${sym} ${Number(flat.amount_paid).toFixed(2)}</td>
-          <td style="font-weight:bold; color: ${outstanding > 0 ? 'var(--danger)' : 'var(--success)'};">${sym} ${outstanding.toFixed(2)}</td>
-          <td><span class="status-badge ${status.toLowerCase()}">${status}</span></td>
-          <td>
-            <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.78rem;" onclick="Reports.printSingleInvoice(summaryData.flats.find(f => f.flat_id === ${flat.flat_id}), '${data.month}', summaryData.settings)">
-              🖨️ Receipt
-            </button>
-          </td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    function downloadExcel() {
-      if (summaryData) {
-        Reports.downloadMonthlyExcel(summaryData.month, summaryData.flats, summaryData.settings);
-      }
-    }
-  </script>
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+  const monthInput = document.getElementById('monthSelector');
+  const saved = localStorage.getItem('selected_month');
+  if (saved) {
+    monthInput.value = saved;
+  } else {
+    const now = new Date();
+    monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  populateSummary();
+});
+</script>
 </body>
 </html>
-

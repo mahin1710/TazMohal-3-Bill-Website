@@ -1,189 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Electricity Bill Details — TazMohal-3</title>
-  <link rel="stylesheet" href="css/modern.css" />
-  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Electricity Bill Details - TazMohal-3</title>
+<link rel="stylesheet" href="styles.css"/>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+<header>
+<h1>TazMohal-3</h1>
+<p>Uttarkhan, Uttara, Dhaka-1230</p>
+<button id="themeToggle">🌙</button>
+<div class="month-select">
+<label>Select Month:</label>
+<input type="month" id="monthSelector" onchange="populateDetails()"/>
+</div>
+</header>
 
-  <!-- App Header -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand-info">
-        <h1>⚡ Electricity Bill Breakdown</h1>
-        <p>TazMohal-3 — Uttarkhan, Uttara, Dhaka-1230</p>
-      </div>
+<main class="container">
+<h2>Detailed Electricity Bill Breakdown</h2>
+<div class="actions">
+<button onclick="window.location.href='index.html'">🏠 Rent Calculator</button>
+<button onclick="window.location.href='summary.html'">📊 View Summary</button>
+<button onclick="window.location.href='paid-bill.html'" style="background:#00796b;">💰 Paid Bill</button>
+<button onclick="downloadDetailsExcel()">📥 Download Excel</button>
+</div>
 
-      <div class="header-controls">
-        <div class="month-picker-wrap">
-          <label for="monthSelector">📅 Month:</label>
-          <input type="month" id="monthSelector" onchange="populateDetails()" />
-        </div>
+<table>
+<thead>
+<tr>
+<th>Flat</th><th>Previous Reading</th><th>Current Reading</th><th>Units Used</th><th>Unit Charge (৳10)</th><th>Meter Charge (৳60)</th><th>Total Electricity Bill (৳)</th>
+</tr>
+</thead>
+<tbody id="details-body">
+<tr><td colspan="7">Please select a month</td></tr>
+</tbody>
+</table>
+</main>
 
-        <nav class="nav-links">
-          <a href="index.html" class="nav-link">Dashboard</a>
-          <a href="summary.html" class="nav-link">Summary</a>
-          <a href="details.html" class="nav-link active">Electricity Details</a>
-          <a href="history.html" class="nav-link">History</a>
-          <a href="settings.html" class="nav-link">Settings & Backups</a>
-        </nav>
+<script>
+async function populateDetails(){
+  const month = document.getElementById('monthSelector').value;
+  const tbody = document.getElementById('details-body');
+  tbody.innerHTML = '';
+  if (!month) { tbody.innerHTML = '<tr><td colspan="7">Please select a month</td></tr>'; return; }
 
-        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
-      </div>
-    </div>
-  </header>
-
-  <main class="container">
-
-    <section class="action-bar">
-      <div>
-        <h2 style="font-size: 1.15rem; color: var(--primary);">Detailed Meter Consumption Breakdown</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Configurable unit rate & meter fee applied automatically.</p>
-      </div>
-      <div class="action-buttons">
-        <a href="summary.html" class="btn btn-outline">⬅ Back to Summary</a>
-        <button class="btn btn-success" onclick="downloadDetailsExcel()">📥 Download Excel</button>
-        <button class="btn btn-primary" onclick="window.print()">🖨️ Print Sheet</button>
-      </div>
-    </section>
-
-    <div class="table-wrap">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Flat</th>
-            <th>Tenant</th>
-            <th>Previous Reading</th>
-            <th>Current Reading</th>
-            <th>Units Used</th>
-            <th>Unit Rate</th>
-            <th>Energy Charge</th>
-            <th>Meter Charge</th>
-            <th>Total Electricity (৳)</th>
-          </tr>
-        </thead>
-        <tbody id="details-body">
-          <tr><td colspan="9" style="text-align: center; padding: 24px;">Please select a month</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-  </main>
-
-  <footer class="app-footer">
-    <p>TazMohal-3 Billing Portal | Uttarkhan, Uttara, Dhaka</p>
-  </footer>
-
-  <script src="js/api.js"></script>
-  <script src="js/reports.js"></script>
-  <script>
-    let activeMonthData = null;
-
-    document.addEventListener('DOMContentLoaded', () => {
-      initTheme();
-      const selector = document.getElementById('monthSelector');
-      const now = new Date();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      selector.value = `${now.getFullYear()}-${m}`;
-      populateDetails();
-    });
-
-    function initTheme() {
-      const saved = localStorage.getItem('theme') || 'light';
-      applyTheme(saved);
-      document.getElementById('themeToggle').addEventListener('click', () => {
-        const isDark = document.body.classList.contains('dark-mode');
-        const next = isDark ? 'light' : 'dark';
-        applyTheme(next);
-        localStorage.setItem('theme', next);
-      });
-    }
-
-    function applyTheme(theme) {
-      const btn = document.getElementById('themeToggle');
-      if (theme === 'dark') {
-        document.body.classList.add('dark-mode');
-        document.documentElement.setAttribute('data-theme', 'dark');
-        btn.textContent = '☀️';
-      } else {
-        document.body.classList.remove('dark-mode');
-        document.documentElement.setAttribute('data-theme', 'light');
-        btn.textContent = '🌙';
+  let flatsData = [];
+  try {
+    const res = await fetch(`/api/billing/month/${month}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json && Array.isArray(json.flats)) {
+        flatsData = json.flats.map(f => ({
+          flat: f.flat_name || `Flat ${f.flat_number}`,
+          previous: Number(f.previous_reading) || 0,
+          current: Number(f.current_reading) || 0,
+          units: Number(f.units_used) || 0,
+          electricBill: Number(f.electricity_bill) || 0
+        }));
       }
     }
+  } catch (e) {}
 
-    async function populateDetails() {
-      const month = document.getElementById('monthSelector').value;
-      const tbody = document.getElementById('details-body');
-      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">Loading data...</td></tr>';
+  if (!flatsData.length) {
+    const local = JSON.parse(localStorage.getItem('rent_' + month)) || [];
+    flatsData = local.map(f => ({
+      flat: `Flat ${f.flat}`,
+      previous: Number(f.previous) || 0,
+      current: Number(f.current) || 0,
+      units: Number(f.units) || 0,
+      electricBill: Number(f.electricBill) || 0
+    }));
+  }
 
-      try {
-        activeMonthData = await API.getMonthBilling(month);
-        renderTable(activeMonthData);
-      } catch (err) {
-        // Fallback to localStorage for backward compatibility
-        const local = JSON.parse(localStorage.getItem('rent_' + month)) || [];
-        if (!local.length) {
-          tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 24px;">No data found for this month</td></tr>';
-          return;
-        }
-        tbody.innerHTML = '';
-        local.forEach(f => {
-          const row = document.createElement('tr');
-          const units = (f.units !== undefined ? f.units : (f.current - f.previous)) || 0;
-          row.innerHTML = `
-            <td><strong>Flat ${f.flat}</strong></td>
-            <td>N/A</td>
-            <td>${Number(f.previous).toFixed(2)}</td>
-            <td>${Number(f.current).toFixed(2)}</td>
-            <td><strong>${units.toFixed(2)}</strong></td>
-            <td>৳ 10.00</td>
-            <td>৳ ${(units * 10).toFixed(2)}</td>
-            <td>৳ 60.00</td>
-            <td><strong>৳ ${Number(f.electricBill || (units * 10 + 60)).toFixed(2)}</strong></td>
-          `;
-          tbody.appendChild(row);
-        });
-      }
-    }
+  if (!flatsData.length) { tbody.innerHTML = '<tr><td colspan="7">No data found for this month</td></tr>'; return; }
 
-    function renderTable(data) {
-      const tbody = document.getElementById('details-body');
-      tbody.innerHTML = '';
-      const sym = data.settings.currencySymbol || '৳';
-      const rate = Number(data.settings.unitRate) || 10;
-      const meter = Number(data.settings.meterCharge) || 60;
+  flatsData.forEach(flat => {
+    const row = document.createElement('tr');
+    row.innerHTML = `<td><strong>${flat.flat}</strong></td><td>${flat.previous.toFixed(2)}</td><td>${flat.current.toFixed(2)}</td><td>${flat.units.toFixed(2)}</td><td>${(flat.units * 10).toFixed(2)}</td><td>60.00</td><td><strong>${flat.electricBill.toFixed(2)}</strong></td>`;
+    tbody.appendChild(row);
+  });
+}
 
-      data.flats.forEach(flat => {
-        const row = document.createElement('tr');
-        const units = Number(flat.units_used) || 0;
-        const energyCharge = units * rate;
-        const totalElec = Number(flat.electricity_bill) || 0;
+function downloadDetailsExcel(){
+  const month = document.getElementById('monthSelector').value;
+  if (!month) { alert('Select a month!'); return; }
+  const table = document.querySelector('table');
+  const wb = XLSX.utils.table_to_book(table, { sheet: 'Electricity Details' });
+  XLSX.writeFile(wb, `TazMohal3_Details_${month}.xlsx`);
+}
 
-        row.innerHTML = `
-          <td><strong>${flat.flat_name || `Flat ${flat.flat_number}`}</strong></td>
-          <td>${flat.tenant_name || '<em style="color:var(--text-muted)">Vacant</em>'}</td>
-          <td>${Number(flat.previous_reading).toFixed(2)}</td>
-          <td>${Number(flat.current_reading).toFixed(2)}</td>
-          <td><strong>${units.toFixed(2)}</strong></td>
-          <td>${sym} ${rate.toFixed(2)}</td>
-          <td>${sym} ${energyCharge.toFixed(2)}</td>
-          <td>${sym} ${meter.toFixed(2)}</td>
-          <td><strong style="color:var(--accent);">${sym} ${totalElec.toFixed(2)}</strong></td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
+// Theme toggle
+const toggleBtn = document.getElementById('themeToggle');
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  });
+}
 
-    function downloadDetailsExcel() {
-      if (activeMonthData) {
-        Reports.downloadMonthlyExcel(activeMonthData.month, activeMonthData.flats, activeMonthData.settings);
-      }
-    }
-  </script>
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+  const monthInput = document.getElementById('monthSelector');
+  const saved = localStorage.getItem('selected_month');
+  if (saved) {
+    monthInput.value = saved;
+  } else {
+    const now = new Date();
+    monthInput.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }
+  populateDetails();
+});
+</script>
 </body>
 </html>
-

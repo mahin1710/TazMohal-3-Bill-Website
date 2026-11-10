@@ -220,3 +220,36 @@ h2 {
 .dark-mode .summary-table th, .dark-mode table th {
   background: #111;
 }
+
+/* Status Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 4px;
+}
+.badge-paid {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.badge-partial {
+  background: #fff8e1;
+  color: #f57f17;
+}
+.badge-unpaid {
+  background: #ffebee;
+  color: #c62828;
+}
+.dark-mode .badge-paid {
+  background: #1b5e20;
+  color: #a5d6a7;
+}
+.dark-mode .badge-partial {
+  background: #f57f17;
+  color: #fff9c4;
+}
+.dark-mode .badge-unpaid {
+  background: #b71c1c;
+  color: #ffcdd2;
+}

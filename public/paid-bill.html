@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Paid Bill Management — TazMohal-3</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <style>
+    .payment-table input[type="number"], .payment-table select {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .payment-table input[type="number"] {
+      width: 110px;
+    }
+    .payment-table select {
+      width: 90px;
+    }
+    .btn-record {
+      background: #00796b !important;
+      color: white;
+      padding: 6px 12px !important;
+      font-size: 13px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-record:hover {
+      background: #004d40 !important;
+    }
+    .stats-summary {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      flex: 1;
+      min-width: 200px;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      border-left: 4px solid #004d66;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: #666;
+      display: block;
+    }
+    .stat-val {
+      font-size: 22px;
+      font-weight: bold;
+      color: #004d66;
+      display: block;
+      margin-top: 4px;
+    }
+    .history-drawer {
+      display: none;
+      background: #fafafa;
+      padding: 10px;
+      margin-top: 8px;
+      border-radius: 6px;
+      font-size: 13px;
+      border: 1px solid #e0e0e0;
+      text-align: left;
+    }
+    .history-drawer.active {
+      display: block;
+    }
+    .tx-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .tx-item:last-child {
+      border-bottom: none;
+    }
+    .btn-del-tx {
+      background: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 2px 6px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .dark-mode .stat-box {
+      background: #2a2a2a;
+      color: white;
+      border-left-color: #00bcd4;
+    }
+    .dark-mode .stat-label {
+      color: #aaa;
+    }
+    .dark-mode .stat-val {
+      color: #80deea;
+    }
+    .dark-mode .history-drawer {
+      background: #333;
+      color: #eee;
+      border-color: #444;
+    }
+    .dark-mode .tx-item {
+      border-bottom-color: #444;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>TazMohal-3</h1>
+  <p>Paid Bill & Tenant Payment Management</p>
+
+  <button id="themeToggle">🌙</button>
+
+  <div class="month-select">
+    <label>Select Month:</label>
+    <input type="month" id="monthSelector" onchange="loadPaidBillData()">
+    <span id="saveStatus" style="margin-left: 10px; font-size: 13px; font-weight: normal; color: #b2dfdb;"></span>
+  </div>
+</header>
+
+<main class="container">
+  <h2>Tenant Payment Collection (Paid Bill)</h2>
+
+  <div class="actions" style="text-align: left; margin-bottom: 20px;">
+    <button onclick="window.location.href='index.html'">⬅ Back to Rent Calculator (Pay Bill)</button>
+    <button onclick="window.location.href='summary.html'">📊 View Summary</button>
+    <button onclick="window.location.href='details.html'">⚡ Electricity Details</button>
+    <button onclick="downloadPaymentLedgerExcel()" style="background: #2e7d32;">📥 Download Payment Ledger Excel</button>
+  </div>
+
+  <div class="stats-summary">
+    <div class="stat-box">
+      <span class="stat-label">Total Monthly Bill</span>
+      <span class="stat-val" id="totalBilled">৳ 0.00</span>
+    </div>
+    <div class="stat-box" style="border-left-color: #2e7d32;">
+      <span class="stat-label">Total Amount Collected</span>
+      <span class="stat-val" style="color: #2e7d32;" id="totalCollected">৳ 0.00</span>
+    </div>
+    <div class="stat-box" style="border-left-color: #d32f2f;">
+      <span class="stat-label">Total Outstanding Due</span>
+      <span class="stat-val" style="color: #d32f2f;" id="totalOutstanding">৳ 0.00</span>
+    </div>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="summary-table payment-table">
+      <thead>
+        <tr>
+          <th>Flat</th>
+          <th>Electricity Bill</th>
+          <th>House Rent</th>
+          <th>Previous Due</th>
+          <th>Total Payable</th>
+          <th>Amount Paid</th>
+          <th>Remaining Due</th>
+          <th>Status</th>
+          <th>Record New Payment</th>
+          <th>Installments</th>
+        </tr>
+      </thead>
+      <tbody id="paymentTableBody">
+        <tr><td colspan="10">Loading monthly payment records...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+let currentMonthData = null;
+
+async function loadPaidBillData() {
+  const month = document.getElementById('monthSelector').value;
+  if (!month) return;
+  localStorage.setItem('selected_month', month);
+
+  const tbody = document.getElementById('paymentTableBody');
+  tbody.innerHTML = '<tr><td colspan="10">Loading records...</td></tr>';
+
+  try {
+    const res = await fetch(`/api/billing/month/${month}`);
+    if (!res.ok) throw new Error('Failed to load');
+    const data = await res.json();
+    currentMonthData = data;
+    renderPaymentTable(data);
+  } catch (err) {
+    console.error('Failed to load from backend:', err);
+    tbody.innerHTML = '<tr><td colspan="10" style="color:red;">Error loading records. Make sure the backend server is running.</td></tr>';
+  }
+}
+
+function renderPaymentTable(data) {
+  const tbody = document.getElementById('paymentTableBody');
+  tbody.innerHTML = '';
+
+  document.getElementById('totalBilled').textContent = '৳ ' + (data.summary.totalPayable || 0).toFixed(2);
+  document.getElementById('totalCollected').textContent = '৳ ' + (data.summary.totalPaid || 0).toFixed(2);
+  document.getElementById('totalOutstanding').textContent = '৳ ' + (data.summary.totalOutstanding || 0).toFixed(2);
+
+  data.flats.forEach(flat => {
+    const tr = document.createElement('tr');
+
+    let badgeClass = 'badge-unpaid';
+    if (flat.payment_status === 'PAID') badgeClass = 'badge-paid';
+    else if (flat.payment_status === 'PARTIALLY PAID') badgeClass = 'badge-partial';
+
+    const paymentsList = flat.payments || [];
+    const hasHistory = paymentsList.length > 0;
+
+    tr.innerHTML = `
+      <td><strong>${flat.flat_name || 'Flat ' + flat.flat_number}</strong></td>
+      <td>${Number(flat.electricity_bill || 0).toFixed(2)}</td>
+      <td>${Number(flat.house_rent || 0).toFixed(2)}</td>
+      <td>${Number(flat.due_amount || 0).toFixed(2)}</td>
+      <td><strong>${Number(flat.total_payable || 0).toFixed(2)}</strong></td>
+      <td style="color:#2e7d32; font-weight:bold;">${Number(flat.amount_paid || 0).toFixed(2)}</td>
+      <td style="color:#d32f2f; font-weight:bold;">${Number(flat.remaining_due || 0).toFixed(2)}</td>
+      <td><span class="badge ${badgeClass}">${flat.payment_status || 'UNPAID'}</span></td>
+      <td>
+        <div style="display:flex; gap:6px; align-items:center; justify-content:center;">
+          <input type="number" id="payInput_${flat.flat_id}" placeholder="৳ Amount" step="0.01" />
+          <select id="payMethod_${flat.flat_id}">
+            <option value="Cash">Cash</option>
+            <option value="bKash">bKash</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Bank">Bank</option>
+          </select>
+          <button class="btn-record" onclick="recordPayment(${flat.flat_id})">Save</button>
+        </div>
+      </td>
+      <td>
+        <button style="padding:4px 8px; font-size:12px; background:#006699; color:white; border:none; border-radius:4px; cursor:pointer;" onclick="toggleHistory(${flat.flat_id})">
+          ${paymentsList.length} Payment${paymentsList.length === 1 ? '' : 's'}
+        </button>
+        <div class="history-drawer" id="drawer_${flat.flat_id}">
+          ${hasHistory ? paymentsList.map(p => `
+            <div class="tx-item">
+              <span><strong>৳ ${Number(p.amount).toFixed(2)}</strong> (${p.payment_method}) - <small>${p.payment_date}</small></span>
+              <button class="btn-del-tx" title="Delete payment" onclick="deletePayment(${p.id})">✕</button>
+            </div>
+          `).join('') : '<span style="color:#888;">No payments recorded yet.</span>'}
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleHistory(flatId) {
+  const drawer = document.getElementById(`drawer_${flatId}`);
+  if (drawer) {
+    drawer.classList.toggle('active');
+  }
+}
+
+async function recordPayment(flatId) {
+  const month = document.getElementById('monthSelector').value;
+  const inputEl = document.getElementById(`payInput_${flatId}`);
+  const methodEl = document.getElementById(`payMethod_${flatId}`);
+  const amount = parseFloat(inputEl.value);
+
+  if (isNaN(amount) || amount <= 0) {
+    alert('Please enter a valid payment amount greater than zero.');
+    inputEl.focus();
+    return;
+  }
+
+  const method = methodEl.value || 'Cash';
+
+  try {
+    const res = await fetch('/api/billing/record-payment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        month,
+        flat_id: flatId,
+        amount,
+        payment_method: method
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Error recording payment: ' + (err.error || 'Server error'));
+      return;
+    }
+
+    inputEl.value = '';
+    loadPaidBillData();
+  } catch (err) {
+    alert('Failed to connect to server to record payment.');
+  }
+}
+
+async function deletePayment(txId) {
+  if (!confirm('Are you sure you want to remove this payment entry? The due will be recalculated.')) return;
+
+  try {
+    const res = await fetch(`/api/billing/delete-payment/${txId}`, {
+      method: 'DELETE'
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Error: ' + (err.error || 'Failed to delete'));
+      return;
+    }
+    loadPaidBillData();
+  } catch (err) {
+    alert('Failed to delete payment transaction.');
+  }
+}
+
+function downloadPaymentLedgerExcel() {
+  if (!currentMonthData || !currentMonthData.flats) {
+    alert('No data loaded to export.');
+    return;
+  }
+  const month = document.getElementById('monthSelector').value;
+  const rows = [];
+
+  currentMonthData.flats.forEach(f => {
+    rows.push({
+      'Flat': f.flat_name || `Flat ${f.flat_number}`,
+      'Tenant': f.tenant_name || '',
+      'Electricity Bill': f.electricity_bill,
+      'House Rent': f.house_rent,
+      'Previous Due': f.due_amount,
+      'Total Payable': f.total_payable,
+      'Total Amount Paid': f.amount_paid,
+      'Remaining Due': f.remaining_due,
+      'Payment Status': f.payment_status,
+      'Installments Count': (f.payments || []).length
+    });
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Payment Ledger');
+  XLSX.writeFile(wb, `TazMohal3_Payment_Ledger_${month}.xlsx`);
+}
+
+// Theme toggle
+const toggleBtn = document.getElementById('themeToggle');
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-mode');
+  }
+
+  const monthInput = document.getElementById('monthSelector');
+  const savedMonth = localStorage.getItem('selected_month');
+  if (savedMonth) {
+    monthInput.value = savedMonth;
+  } else {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    monthInput.value = `${yyyy}-${mm}`;
+  }
+
+  loadPaidBillData();
+});
+</script>
+</body>
+</html>

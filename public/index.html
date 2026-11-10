@@ -3,118 +3,134 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TazMohal-3 — Residential Billing Management Portal</title>
-  <link rel="stylesheet" href="css/modern.css" />
+  <title>TazMohal-3 Rent Calculator</title>
+  <link rel="stylesheet" href="styles.css" />
   <!-- SheetJS library for Excel export -->
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+<header>
+  <h1>TazMohal-3</h1>
+  <p>Uttarkhan, Uttara, Dhaka-1230</p>
 
-  <!-- App Header -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="brand-info">
-        <h1>🏢 TazMohal-3 Billing Portal</h1>
-        <p>Uttarkhan, Uttara, Dhaka-1230, Bangladesh</p>
-      </div>
+  <button id="themeToggle">🌙</button>
 
-      <div class="header-controls">
-        <div class="month-picker-wrap">
-          <label for="monthSelector">📅 Billing Month:</label>
-          <input type="month" id="monthSelector" />
-        </div>
+  <div class="month-select">
+    <label>Select Month:</label>
+    <input type="month" id="monthSelector" onchange="onMonthChange()">
+    <span id="saveStatus" style="margin-left: 10px; font-size: 13px; font-weight: normal; color: #b2dfdb;"></span>
+  </div>
+</header>
 
-        <nav class="nav-links">
-          <a href="index.html" class="nav-link active">Dashboard</a>
-          <a href="summary.html" class="nav-link">Summary</a>
-          <a href="details.html" class="nav-link">Electricity Details</a>
-          <a href="history.html" class="nav-link">History</a>
-          <a href="settings.html" class="nav-link">Settings & Backups</a>
-        </nav>
+<main class="container">
+  <h2>Flat Rent & Electricity Bill Calculator</h2>
 
-        <span class="save-badge saved" id="globalSaveBadge">
-          <span>💾</span> Ready
-        </span>
-
-        <button id="themeToggle" class="btn-icon" title="Toggle Light/Dark Theme">🌙</button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Container -->
-  <main class="container">
-
-    <!-- Migration Alert Banner (shown only if legacy localStorage data exists) -->
-    <div class="alert-banner" id="migrationBanner" style="display: none;">
-      <div>
-        <strong>📦 Historical Browser Data Detected:</strong>
-        <span id="migrationMsg">Found records from previous sessions.</span>
-      </div>
-      <button onclick="runLocalStorageMigration()">Migrate to Database</button>
+  <div class="flat-grid">
+    <!-- 9 Flats -->
+    <div class="flat-row" data-flat-id="1">
+      <h3>Flat 1</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
     </div>
 
-    <!-- Clean Unified Metrics Bar -->
-    <section class="metrics-bar">
-      <div class="metric-item">
-        <span class="m-label">Rent Total</span>
-        <span class="m-val" id="metricTotalRent">৳ 0.00</span>
-      </div>
-      <div class="metric-divider"></div>
-      <div class="metric-item">
-        <span class="m-label">Electricity</span>
-        <span class="m-val" id="metricTotalElec">৳ 0.00</span>
-      </div>
-      <div class="metric-divider"></div>
-      <div class="metric-item">
-        <span class="m-label">Total Monthly Bill</span>
-        <span class="m-val highlight" id="metricTotalPayable">৳ 0.00</span>
-      </div>
-      <div class="metric-divider"></div>
-      <div class="metric-item">
-        <span class="m-label">Total Collected</span>
-        <span class="m-val green" id="metricTotalPaid">৳ 0.00</span>
-      </div>
-      <div class="metric-divider"></div>
-      <div class="metric-item">
-        <span class="m-label">Remaining Due</span>
-        <span class="m-val red" id="metricTotalDue">৳ 0.00</span>
-      </div>
-    </section>
+    <!-- Repeat Flat 2 to Flat 9 -->
+    <div class="flat-row" data-flat-id="2">
+      <h3>Flat 2</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="3">
+      <h3>Flat 3</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="4">
+      <h3>Flat 4</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="5">
+      <h3>Flat 5</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="6">
+      <h3>Flat 6</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="7">
+      <h3>Flat 7</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="8">
+      <h3>Flat 8</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+    <div class="flat-row" data-flat-id="9">
+      <h3>Flat 9</h3>
+      <label>Current Reading: <input type="number" class="current-reading" step="0.01" /></label>
+      <label>Previous Reading: <input type="number" class="previous-reading" step="0.01" /></label>
+      <label>House Rent: <input type="number" class="house-rent" /></label>
+      <label>Due Amount: <input type="number" class="due-amount" /></label>
+      <label>Notes: <textarea class="notes-text" rows="2" placeholder="Optional notes"></textarea></label>
+      <div>Total Bill: <span class="total-bill">0.00</span> /=</div>
+      <div class="bill-details"></div>
+    </div>
+  </div>
 
-    <!-- Top Unified Control Bar -->
-    <section class="top-control-bar">
-      <!-- Clean Mode Switcher: Just One Button at the Top for All Flats -->
-      <div class="mode-switch-group">
-        <button class="mode-switch-btn active" id="tabPayBill" onclick="switchWorkflowMode('pay')">
-          ⚡ Pay Bill (বিল তৈরি ও হিসাব)
-        </button>
-        <button class="mode-switch-btn" id="tabPaidBill" onclick="switchWorkflowMode('paid')">
-          💰 Paid Bill (পেমেন্ট গ্রহণ ও বকেয়া)
-        </button>
-      </div>
+  <div class="actions">
+    <button onclick="calculateAll()">Calculate All</button>
+    <button onclick="saveMonthData()">Save Monthly Data</button>
+    <button onclick="saveAndGoToSummary()">View Summary</button>
+    <button onclick="downloadMonthlyExcel()">Download Month Excel</button>
+    <button onclick="downloadYearlyExcel()">Download Yearly Excel</button>
+    <button onclick="window.location.href='paid-bill.html'" style="background: #00796b;">💰 Paid Bill Management</button>
+  </div>
+</main>
 
-      <div class="action-buttons">
-        <button class="btn btn-outline" onclick="calculateAll()" title="Recalculate All Flats">⚡ Recalculate</button>
-        <button class="btn btn-primary" onclick="saveAllData()">💾 Save All</button>
-        <button class="btn btn-success" onclick="downloadMonthlyExcel()">📥 Excel</button>
-        <a href="summary.html" class="btn btn-outline">📊 Summary</a>
-      </div>
-    </section>
-
-    <!-- 9 Flat Billing Cards Grid -->
-    <section class="flat-grid" id="flatGrid">
-      <!-- Populated dynamically by app.js -->
-    </section>
-
-  </main>
-
-  <footer class="app-footer">
-    <p><strong>TazMohal-3 Billing Management System v2.0</strong> | Developed for TazMohal-3, Uttarkhan, Uttara, Dhaka</p>
-  </footer>
-
-  <script src="js/api.js"></script>
-  <script src="js/reports.js"></script>
-  <script src="js/app.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
-

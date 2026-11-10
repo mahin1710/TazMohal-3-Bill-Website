@@ -52,11 +52,11 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve modern public assets
-app.use(express.static(path.join(__dirname, '../public')));
-
-// Also serve root directory as fallback for backward compatibility
+// Serve root directory first (preserves original interface)
 app.use(express.static(path.join(__dirname, '../')));
+
+// Also serve public directory as fallback
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Global 404 Handler for APIs
 app.use('/api/*', (req, res) => {
