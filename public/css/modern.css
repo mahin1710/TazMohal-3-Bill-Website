@@ -699,204 +699,280 @@ footer.app-footer {
   }
 }
 
-/* Workflow Tabs (Pay Bill vs Paid Bill) */
-.workflow-nav {
+/* Clean Metrics Bar */
+.metrics-bar {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
   background: var(--bg-card);
-  padding: 8px;
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border);
+  padding: 14px 24px;
+  margin-bottom: 16px;
   box-shadow: var(--shadow-sm);
-  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.workflow-tab-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px 20px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.workflow-tab-btn:hover {
-  color: var(--primary);
-  background: var(--primary-light);
-}
-
-.workflow-tab-btn.active {
-  background: var(--primary);
-  color: #fff;
-  box-shadow: var(--shadow-sm);
-}
-
-[data-theme="dark"] .workflow-tab-btn.active {
-  background: var(--accent);
-  color: #fff;
-}
-
-/* Card Mode Toggle Pill inside each Flat Card */
-.card-mode-toggle {
-  display: flex;
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-  margin-bottom: 14px;
-}
-
-.card-mode-btn {
-  flex: 1;
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-}
-
-.card-mode-btn.active {
-  background: var(--primary);
-  color: #fff;
-}
-
-[data-theme="dark"] .card-mode-btn.active {
-  background: var(--accent);
-  color: #fff;
-}
-
-/* Carried Forward Badge */
-.badge-carried {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
-  margin-left: 6px;
-}
-
-/* Paid Bill Section Styles */
-.paid-bill-view {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.balance-card-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  padding: 12px;
-  border-radius: var(--radius-sm);
-}
-
-.balance-item {
+.metric-item {
   display: flex;
   flex-direction: column;
 }
 
-.balance-item .lbl {
-  font-size: 0.72rem;
+.metric-item .m-label {
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-.balance-item .val {
+.metric-item .m-val {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.metric-item .m-val.highlight {
+  color: var(--primary);
+}
+
+[data-theme="dark"] .metric-item .m-val.highlight {
+  color: var(--accent);
+}
+
+.metric-item .m-val.green {
+  color: var(--success);
+}
+
+.metric-item .m-val.red {
+  color: var(--danger);
+}
+
+.metric-divider {
+  width: 1px;
+  height: 38px;
+  background: var(--border);
+}
+
+@media (max-width: 768px) {
+  .metric-divider { display: none; }
+  .metrics-bar { justify-content: flex-start; gap: 14px; }
+}
+
+/* Top Unified Control Bar (Only One Clean Switcher at the Top) */
+.top-control-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.mode-switch-group {
+  display: inline-flex;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.mode-switch-btn {
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-switch-btn:hover {
+  color: var(--primary);
+}
+
+.mode-switch-btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .mode-switch-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Flat Card Clean Styles */
+.flat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.flat-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+}
+
+.flat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+/* Clean Paid Bill Inline Stats */
+.paid-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.paid-stats-row .stat-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.paid-stats-row .lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.paid-stats-row .num {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--text-main);
 }
 
-.balance-item .val.green {
+.paid-stats-row .num.green {
   color: var(--success);
 }
 
-.balance-item .val.red {
+.paid-stats-row .num.red {
   color: var(--danger);
 }
 
-.balance-item .val.blue {
-  color: var(--accent);
+/* Inline Compact Payment Row */
+.inline-pay-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
-/* Payment Form Box */
-.record-payment-form {
-  background: var(--primary-light);
-  border: 1px dashed var(--primary);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-}
-
-[data-theme="dark"] .record-payment-form {
-  background: rgba(2, 132, 199, 0.1);
-  border-color: var(--accent);
-}
-
-.payment-history-wrap {
-  margin-top: 8px;
-}
-
-.payment-history-list {
-  max-height: 170px;
-  overflow-y: auto;
+.inline-pay-row input, .inline-pay-row select {
+  padding: 8px 10px;
+  font-size: 0.88rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  margin-top: 6px;
   background: var(--bg-main);
+  color: var(--text-main);
+  outline: none;
 }
 
-.payment-history-item {
+.inline-pay-row input[type="number"] {
+  flex: 1.2;
+}
+
+.inline-pay-row select {
+  flex: 1;
+}
+
+.inline-pay-row button {
+  padding: 8px 14px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+/* Payment History Pill Tags */
+.payment-tags-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.payment-tag {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
+  background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
   font-size: 0.82rem;
-  border-bottom: 1px solid var(--border);
 }
 
-.payment-history-item:last-child {
-  border-bottom: none;
-}
-
-.payment-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.payment-method-pill {
-  font-size: 0.72rem;
-  font-weight: 700;
-  padding: 1px 6px;
+.payment-tag .del-btn {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 6px;
   border-radius: 4px;
-  background: var(--border);
-  display: inline-block;
-  width: fit-content;
+}
+
+.payment-tag .del-btn:hover {
+  background: var(--danger-bg);
+}
+
+/* Clean Bill Summary Box */
+.clean-bill-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--primary-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-top: auto;
+  font-size: 0.88rem;
+  border-left: 3px solid var(--primary);
+}
+
+[data-theme="dark"] .clean-bill-summary {
+  background: rgba(2, 132, 199, 0.1);
+  border-left-color: var(--accent);
+}
+
+.btn-icon-sm {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all 0.15s;
+}
+
+.btn-icon-sm:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-light);
 }
 
 

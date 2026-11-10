@@ -1,5 +1,5 @@
 // public/js/app.js
-// Main Billing Dashboard Controller with Pay Bill & Paid Bill Workflow
+// TazMohal-3 Clean & Minimalist Billing Dashboard Controller
 
 let currentMonthData = {
   month: '',
@@ -9,7 +9,7 @@ let currentMonthData = {
   summary: {}
 };
 
-let currentWorkflowMode = 'pay'; // 'pay' (Option 1) or 'paid' (Option 2)
+let currentWorkflowMode = 'pay'; // 'pay' (Pay Bill) or 'paid' (Paid Bill)
 
 // Initialize Dashboard
 document.addEventListener('DOMContentLoaded', async () => {
@@ -63,7 +63,7 @@ function initMonthSelector() {
   });
 }
 
-// Workflow Mode Switcher (Option 1: Pay Bill vs Option 2: Paid Bill)
+// Clean Top Workflow Mode Switcher
 function switchWorkflowMode(mode) {
   currentWorkflowMode = mode;
   const tabPay = document.getElementById('tabPayBill');
@@ -71,41 +71,16 @@ function switchWorkflowMode(mode) {
   if (tabPay) tabPay.classList.toggle('active', mode === 'pay');
   if (tabPaid) tabPaid.classList.toggle('active', mode === 'paid');
 
-  const guidance = document.getElementById('modeGuidanceText');
-  if (guidance) {
-    if (mode === 'pay') {
-      guidance.innerHTML = '⚡ <strong>Option 1 (Pay Bill):</strong> Enter readings & rent. Previous readings and remaining dues are automatically carried forward.';
-    } else {
-      guidance.innerHTML = '💰 <strong>Option 2 (Paid Bill):</strong> Record tenant payments, track multiple installments, and review remaining balances.';
-    }
-  }
-
-  // Update mode across all cards
+  // Toggle all cards smoothly
   document.querySelectorAll('.flat-card').forEach(card => {
     const flatId = Number(card.dataset.flatId);
-    setCardMode(card, flatId, mode);
-  });
-}
-
-function setCardMode(card, flatId, mode) {
-  const payView = card.querySelector(`#pay-view-${flatId}`);
-  const paidView = card.querySelector(`#paid-view-${flatId}`);
-  const btnPay = card.querySelector(`#mode-btn-pay-${flatId}`);
-  const btnPaid = card.querySelector(`#mode-btn-paid-${flatId}`);
-
-  if (payView && paidView) {
-    if (mode === 'pay') {
-      payView.style.display = 'block';
-      paidView.style.display = 'none';
-      if (btnPay) btnPay.classList.add('active');
-      if (btnPaid) btnPaid.classList.remove('active');
-    } else {
-      payView.style.display = 'none';
-      paidView.style.display = 'block';
-      if (btnPay) btnPay.classList.remove('active');
-      if (btnPaid) btnPaid.classList.add('active');
+    const payView = card.querySelector(`#pay-view-${flatId}`);
+    const paidView = card.querySelector(`#paid-view-${flatId}`);
+    if (payView && paidView) {
+      payView.style.display = mode === 'pay' ? 'block' : 'none';
+      paidView.style.display = mode === 'paid' ? 'block' : 'none';
     }
-  }
+  });
 }
 
 // Check for legacy localStorage data
@@ -123,7 +98,7 @@ function checkLocalStorageMigration() {
     const banner = document.getElementById('migrationBanner');
     const msg = document.getElementById('migrationMsg');
     if (banner && msg) {
-      msg.textContent = `Found ${legacyMonths.length} month(s) of historical billing data in browser storage (${legacyMonths.join(', ')}).`;
+      msg.textContent = `Found ${legacyMonths.length} month(s) of historical data in browser storage.`;
       banner.style.display = 'flex';
     }
   }
@@ -138,9 +113,7 @@ async function runLocalStorageMigration() {
       try {
         const records = JSON.parse(localStorage.getItem(key));
         payload.push({ month, records });
-      } catch (e) {
-        console.error('Failed to parse localStorage key:', key);
-      }
+      } catch (e) {}
     }
   }
 
@@ -148,7 +121,7 @@ async function runLocalStorageMigration() {
 
   try {
     const res = await API.migrateLocalStorage(payload);
-    alert(`Success! ${res.importedCount} historical records migrated into SQLite database.`);
+    alert(`Success! ${res.importedCount} historical records migrated into database.`);
     document.getElementById('migrationBanner').style.display = 'none';
     await loadMonthData();
   } catch (err) {
@@ -186,7 +159,7 @@ function renderMetrics(summary = {}, settings = {}) {
   document.getElementById('metricTotalDue').textContent = `${sym} ${(summary.totalOutstanding || 0).toFixed(2)}`;
 }
 
-// Render 9 Flat Cards
+// Render Clean Flat Cards
 function renderFlatCards(flats, settings) {
   const grid = document.getElementById('flatGrid');
   if (!grid) return;
@@ -195,7 +168,6 @@ function renderFlatCards(flats, settings) {
   const unitRate = Number(settings.unitRate) || 10;
   const meterCharge = Number(settings.meterCharge) || 60;
   const sym = settings.currencySymbol || '৳';
-  const todayStr = new Date().toISOString().split('T')[0];
 
   flats.forEach(flat => {
     const card = document.createElement('div');
@@ -216,58 +188,43 @@ function renderFlatCards(flats, settings) {
 
     const statusClass = status.toLowerCase().replace(/\s+/g, '-');
 
-    // Build payment history rows
+    // Build compact payment tags
     const payments = flat.payments || [];
     let paymentsHtml = '';
-    if (payments.length === 0) {
-      paymentsHtml = '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 0.8rem;">No payments recorded yet for this month.</div>';
+    if (payments.length > 0) {
+      paymentsHtml = payments.map(p => `
+        <div class="payment-tag">
+          <span>${p.payment_date} • <strong>${sym} ${Number(p.amount).toFixed(2)}</strong> [${p.payment_method}] ${p.notes ? `<em>"${p.notes}"</em>` : ''}</span>
+          <button class="del-btn" title="Delete payment" onclick="deleteFlatPayment(${p.id}, ${flat.flat_id})">✕</button>
+        </div>
+      `).join('');
     } else {
-      payments.forEach(p => {
-        paymentsHtml += `
-          <div class="payment-history-item">
-            <div class="payment-meta">
-              <strong>${sym} ${Number(p.amount).toFixed(2)}</strong>
-              <span style="font-size: 0.72rem; color: var(--text-muted);">${p.payment_date} • <span class="payment-method-pill">${p.payment_method}</span></span>
-              ${p.notes ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-style: italic;">"${p.notes}"</span>` : ''}
-            </div>
-            <button class="btn btn-danger" style="padding: 2px 6px; font-size: 0.7rem;" title="Delete this payment record" onclick="deleteFlatPayment(${p.id}, ${flat.flat_id})">
-              🗑️
-            </button>
-          </div>
-        `;
-      });
+      paymentsHtml = '<div style="font-size:0.78rem; color:var(--text-muted); text-align:center; padding:4px;">No payments recorded for this month.</div>';
     }
 
     card.innerHTML = `
-      <!-- Card Header -->
+      <!-- Clean Card Header -->
       <div class="flat-card-header">
         <div class="flat-card-title">
           <h3>${flat.flat_name || `Flat ${flat.flat_number}`}</h3>
           ${flat.tenant_name ? `<span class="tenant-badge">👤 ${flat.tenant_name}</span>` : ''}
         </div>
-        <span class="status-badge ${statusClass}" id="status-badge-${flat.flat_id}">${status}</span>
-      </div>
-
-      <!-- Card Mode Toggle Pill -->
-      <div class="card-mode-toggle">
-        <button class="card-mode-btn ${currentWorkflowMode === 'pay' ? 'active' : ''}" id="mode-btn-pay-${flat.flat_id}" onclick="setCardMode(document.getElementById('flat-card-${flat.flat_id}'), ${flat.flat_id}, 'pay')">
-          ⚡ Option 1: Pay Bill (Calculate)
-        </button>
-        <button class="card-mode-btn ${currentWorkflowMode === 'paid' ? 'active' : ''}" id="mode-btn-paid-${flat.flat_id}" onclick="setCardMode(document.getElementById('flat-card-${flat.flat_id}'), ${flat.flat_id}, 'paid')">
-          💰 Option 2: Paid Bill (Payments)
-        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="status-badge ${statusClass}" id="status-badge-${flat.flat_id}">${status}</span>
+          <button class="btn-icon-sm" title="Print Tenant Receipt" onclick="printFlatReceipt(${flat.flat_id})">🖨️</button>
+        </div>
       </div>
 
       <!-- VIEW 1: PAY BILL (Generate & Calculate) -->
       <div class="pay-bill-view" id="pay-view-${flat.flat_id}" style="display: ${currentWorkflowMode === 'pay' ? 'block' : 'none'};">
         <div class="input-group-grid">
           <div class="input-field">
-            <label>Current Meter Reading</label>
+            <label>Current Reading</label>
             <input type="number" step="0.01" class="input-curr" value="${flat.current_reading || ''}" placeholder="0.00" />
           </div>
           <div class="input-field">
             <label>
-              Previous Meter Reading
+              Previous Reading
               ${flat.carried_from_prev_month ? `<span class="badge-carried" title="Auto-retrieved from previous month">🔄 Carried</span>` : ''}
             </label>
             <input type="number" step="0.01" class="input-prev" value="${flat.previous_reading || ''}" placeholder="0.00" />
@@ -280,119 +237,63 @@ function renderFlatCards(flats, settings) {
           </div>
           <div class="input-field">
             <label>
-              Previous Outstanding Due (${sym})
-              ${flat.prev_month_due > 0 ? `<span class="badge-carried" title="Unpaid balance carried from previous month">🔄 Due: ${sym}${flat.prev_month_due}</span>` : ''}
+              Carried Due (${sym})
+              ${flat.prev_month_due > 0 ? `<span class="badge-carried" title="Unpaid balance from previous month">🔄 Due: ${sym}${flat.prev_month_due}</span>` : ''}
             </label>
             <input type="number" step="1" class="input-due" value="${flat.due_amount || ''}" placeholder="0" />
           </div>
           
           <div class="input-field full-width">
-            <label>Notes / Memo</label>
-            <textarea class="input-notes" rows="2" placeholder="Write optional notes or memo...">${flat.notes || ''}</textarea>
+            <label>Notes / Remarks</label>
+            <textarea class="input-notes" rows="1" placeholder="Optional notes...">${flat.notes || ''}</textarea>
           </div>
         </div>
 
-        <div class="bill-summary-box">
-          <div class="summary-row">
-            <span>Units Consumed:</span>
-            <strong id="units-val-${flat.flat_id}">${units.toFixed(2)} units</strong>
-          </div>
-          <div class="summary-row">
-            <span>Electricity Bill:</span>
-            <strong id="elec-val-${flat.flat_id}">${sym} ${elecBill.toFixed(2)}</strong>
-          </div>
-          <div class="summary-row total-row">
-            <span>Total Monthly Bill:</span>
-            <span class="total-amount" id="total-val-${flat.flat_id}">${sym} ${total.toFixed(2)}</span>
-          </div>
-        </div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-          <button class="btn btn-primary" style="font-size: 0.8rem; padding: 6px 12px;" onclick="saveSingleFlatBill(${flat.flat_id})">
-            💾 Save Bill
-          </button>
-          <button class="btn btn-outline" style="font-size: 0.8rem; padding: 6px 12px;" onclick="setCardMode(document.getElementById('flat-card-${flat.flat_id}'), ${flat.flat_id}, 'paid')">
-            💰 Record Payment ➔
-          </button>
+        <div class="clean-bill-summary">
+          <span>Units: <strong id="units-val-${flat.flat_id}">${units.toFixed(2)}</strong> (${sym} ${elecBill.toFixed(2)})</span>
+          <span>Total Bill: <strong style="font-size:1.15rem; color:var(--primary);" id="total-val-${flat.flat_id}">${sym} ${total.toFixed(2)}</strong></span>
         </div>
       </div>
 
       <!-- VIEW 2: PAID BILL (Record Payments & Ledger) -->
       <div class="paid-bill-view" id="paid-view-${flat.flat_id}" style="display: ${currentWorkflowMode === 'paid' ? 'block' : 'none'};">
-        <!-- Balance Overview Card -->
-        <div class="balance-card-grid">
-          <div class="balance-item">
-            <span class="lbl">Total Monthly Bill</span>
-            <span class="val blue" id="paid-tot-${flat.flat_id}">${sym} ${total.toFixed(2)}</span>
+        <!-- Clean Inline Stats -->
+        <div class="paid-stats-row">
+          <div class="stat-col">
+            <span class="lbl">Total Bill</span>
+            <span class="num" id="paid-tot-${flat.flat_id}">${sym} ${total.toFixed(2)}</span>
           </div>
-          <div class="balance-item">
-            <span class="lbl">Total Paid So Far</span>
-            <span class="val green" id="paid-sum-${flat.flat_id}">${sym} ${paid.toFixed(2)}</span>
+          <div class="stat-col">
+            <span class="lbl">Total Paid</span>
+            <span class="num green" id="paid-sum-${flat.flat_id}">${sym} ${paid.toFixed(2)}</span>
           </div>
-          <div class="balance-item" style="grid-column: 1 / -1; border-top: 1px solid var(--border); padding-top: 6px; margin-top: 2px;">
-            <span class="lbl">Remaining Due Amount</span>
-            <span class="val ${remainingDue > 0 ? 'red' : 'green'}" id="paid-rem-${flat.flat_id}">${sym} ${remainingDue.toFixed(2)}</span>
-          </div>
-        </div>
-
-        <!-- Add Payment Form -->
-        <div class="record-payment-form">
-          <div style="font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 8px;">
-            ➕ Receive Payment from ${flat.tenant_name || `Flat ${flat.flat_number}`}
-          </div>
-          <div class="input-group-grid" style="margin-bottom: 8px;">
-            <div class="input-field">
-              <label>Amount Received (${sym})</label>
-              <input type="number" step="1" id="pay-amt-${flat.flat_id}" placeholder="e.g. 5000" />
-            </div>
-            <div class="input-field">
-              <label>Payment Date</label>
-              <input type="date" id="pay-date-${flat.flat_id}" value="${todayStr}" />
-            </div>
-            <div class="input-field">
-              <label>Payment Method</label>
-              <select id="pay-method-${flat.flat_id}">
-                <option value="Cash">Cash</option>
-                <option value="bKash">bKash</option>
-                <option value="Nagad">Nagad</option>
-                <option value="Rocket">Rocket</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-            <div class="input-field">
-              <label>Payment Note / Ref</label>
-              <input type="text" id="pay-note-${flat.flat_id}" placeholder="e.g. 1st installment" />
-            </div>
-          </div>
-          <button class="btn btn-success" style="width: 100%; justify-content: center; padding: 6px 12px; font-size: 0.82rem;" onclick="recordFlatPayment(${flat.flat_id})">
-            ✅ Save Payment Transaction
-          </button>
-        </div>
-
-        <!-- Payment History Ledger -->
-        <div class="payment-history-wrap">
-          <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
-            📜 Payment Ledger (${payments.length} Transaction${payments.length === 1 ? '' : 's'})
-          </div>
-          <div class="payment-history-list" id="payment-list-${flat.flat_id}">
-            ${paymentsHtml}
+          <div class="stat-col">
+            <span class="lbl">Remaining</span>
+            <span class="num ${remainingDue > 0 ? 'red' : 'green'}" id="paid-rem-${flat.flat_id}">${sym} ${remainingDue.toFixed(2)}</span>
           </div>
         </div>
 
-        <!-- Footer Actions in Paid View -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-          <button class="btn btn-outline" style="font-size: 0.78rem; padding: 4px 8px;" onclick="setCardMode(document.getElementById('flat-card-${flat.flat_id}'), ${flat.flat_id}, 'pay')">
-            ⬅ Edit Bill
-          </button>
-          <button class="btn btn-outline" style="font-size: 0.78rem; padding: 4px 8px;" onclick="printFlatReceipt(${flat.flat_id})">
-            🖨️ Receipt
-          </button>
+        <!-- Clean 1-Row Payment Entry -->
+        <div class="inline-pay-row">
+          <input type="number" step="1" id="pay-amt-${flat.flat_id}" placeholder="৳ Amount Received" />
+          <select id="pay-method-${flat.flat_id}">
+            <option value="Cash">Cash</option>
+            <option value="bKash">bKash</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Rocket">Rocket</option>
+            <option value="Bank">Bank</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn btn-success" onclick="recordFlatPayment(${flat.flat_id})">+ Pay</button>
+        </div>
+
+        <!-- Compact Payment History Tags -->
+        <div class="payment-tags-wrap" id="payment-list-${flat.flat_id}">
+          ${paymentsHtml}
         </div>
       </div>
     `;
 
-    // Attach real-time input listeners
     attachInputListeners(card, flat.flat_id);
     grid.appendChild(card);
   });
@@ -451,8 +352,7 @@ function recalcFlatCard(card, flatId) {
   else if (paid > 0 && paid < total) status = 'PARTIALLY PAID';
 
   // Update Pay Bill view elements
-  card.querySelector(`#units-val-${flatId}`).textContent = `${units.toFixed(2)} units`;
-  card.querySelector(`#elec-val-${flatId}`).textContent = `${sym} ${elecBill.toFixed(2)}`;
+  card.querySelector(`#units-val-${flatId}`).textContent = `${units.toFixed(2)}`;
   card.querySelector(`#total-val-${flatId}`).textContent = `${sym} ${total.toFixed(2)}`;
 
   // Update Paid Bill view elements
@@ -461,7 +361,7 @@ function recalcFlatCard(card, flatId) {
   if (paidTot) paidTot.textContent = `${sym} ${total.toFixed(2)}`;
   if (paidRem) {
     paidRem.textContent = `${sym} ${remainingDue.toFixed(2)}`;
-    paidRem.className = `val ${remainingDue > 0 ? 'red' : 'green'}`;
+    paidRem.className = `num ${remainingDue > 0 ? 'red' : 'green'}`;
   }
 
   const badge = card.querySelector(`#status-badge-${flatId}`);
@@ -471,7 +371,6 @@ function recalcFlatCard(card, flatId) {
     badge.textContent = status;
   }
 
-  // Update in-memory flat object
   if (flatObj) {
     flatObj.current_reading = curr;
     flatObj.previous_reading = prev;
@@ -509,7 +408,7 @@ function recalcOverallSummary() {
   renderMetrics(summary, currentMonthData.settings);
 }
 
-// Trigger debounced auto-save for Pay Bill inputs
+// Debounced auto-save for Pay Bill
 function triggerAutoSave(card, flatId) {
   const month = document.getElementById('monthSelector').value;
   const curr = parseFloat(card.querySelector('.input-curr').value) || 0;
@@ -536,51 +435,15 @@ function triggerAutoSave(card, flatId) {
   });
 }
 
-// Save single flat bill explicitly
-async function saveSingleFlatBill(flatId) {
-  const card = document.getElementById(`flat-card-${flatId}`);
-  if (!card) return;
-  const month = document.getElementById('monthSelector').value;
-  const curr = parseFloat(card.querySelector('.input-curr').value) || 0;
-  const prev = parseFloat(card.querySelector('.input-prev').value) || 0;
-  const rent = parseFloat(card.querySelector('.input-rent').value) || 0;
-  const due = parseFloat(card.querySelector('.input-due').value) || 0;
-  const notesEl = card.querySelector('.input-notes');
-  const notes = notesEl ? notesEl.value : '';
-
-  API.setSaveStatus('saving');
-  try {
-    const res = await API.request('/api/billing/save-flat', {
-      method: 'POST',
-      body: JSON.stringify({
-        month,
-        flat_id: flatId,
-        current_reading: curr,
-        previous_reading: prev,
-        house_rent: rent,
-        due_amount: due,
-        notes
-      })
-    });
-    API.setSaveStatus('saved');
-    alert(`Flat ${flatId} monthly bill saved successfully!`);
-  } catch (err) {
-    API.setSaveStatus('error');
-    alert('Failed to save bill: ' + err.message);
-  }
-}
-
-// Record a Payment Transaction (Option 2: Paid Bill)
+// Record a Payment Transaction (Paid Bill)
 async function recordFlatPayment(flatId) {
   const month = document.getElementById('monthSelector').value;
   const amtInput = document.getElementById(`pay-amt-${flatId}`);
-  const dateInput = document.getElementById(`pay-date-${flatId}`);
   const methodInput = document.getElementById(`pay-method-${flatId}`);
-  const noteInput = document.getElementById(`pay-note-${flatId}`);
 
   const amount = parseFloat(amtInput.value);
   if (!amount || amount <= 0) {
-    alert('Please enter a valid payment amount greater than 0.');
+    alert('Please enter a valid amount.');
     amtInput.focus();
     return;
   }
@@ -589,9 +452,9 @@ async function recordFlatPayment(flatId) {
     month,
     flat_id: flatId,
     amount,
-    payment_date: dateInput.value,
-    payment_method: methodInput.value,
-    notes: noteInput.value
+    payment_date: new Date().toISOString().split('T')[0],
+    payment_method: methodInput ? methodInput.value : 'Cash',
+    notes: ''
   };
 
   try {
@@ -599,11 +462,8 @@ async function recordFlatPayment(flatId) {
     const res = await API.recordPayment(payload);
     API.setSaveStatus('saved');
 
-    // Reset amount and note input
     amtInput.value = '';
-    noteInput.value = '';
 
-    // Update in-memory flat object
     const flatObj = currentMonthData.flats.find(f => f.flat_id === flatId);
     if (flatObj) {
       flatObj.amount_paid = res.record.amount_paid;
@@ -612,11 +472,8 @@ async function recordFlatPayment(flatId) {
       flatObj.payments = res.payments;
     }
 
-    // Re-render flat cards to update balance and ledger
     renderFlatCards(currentMonthData.flats, currentMonthData.settings);
     recalcOverallSummary();
-
-    alert(`✅ Payment of ৳${amount.toFixed(2)} recorded for Flat ${flatId}! Status: ${res.record.payment_status}`);
   } catch (err) {
     API.setSaveStatus('error');
     alert('Payment recording failed: ' + err.message);
@@ -625,7 +482,7 @@ async function recordFlatPayment(flatId) {
 
 // Delete an incorrect Payment Transaction
 async function deleteFlatPayment(paymentId, flatId) {
-  const confirmDelete = confirm('Are you sure you want to delete this payment record? This will recalculate the remaining due.');
+  const confirmDelete = confirm('Delete this payment record?');
   if (!confirmDelete) return;
 
   try {
@@ -633,7 +490,6 @@ async function deleteFlatPayment(paymentId, flatId) {
     const res = await API.deletePayment(paymentId);
     API.setSaveStatus('saved');
 
-    // Update in-memory flat object
     const flatObj = currentMonthData.flats.find(f => f.flat_id === flatId);
     if (flatObj && res.record) {
       flatObj.amount_paid = res.record.amount_paid;
@@ -644,7 +500,6 @@ async function deleteFlatPayment(paymentId, flatId) {
 
     renderFlatCards(currentMonthData.flats, currentMonthData.settings);
     recalcOverallSummary();
-    alert('Payment record deleted successfully.');
   } catch (err) {
     API.setSaveStatus('error');
     alert('Failed to delete payment: ' + err.message);
@@ -659,7 +514,6 @@ function calculateAll() {
     recalcFlatCard(card, flatId);
     triggerAutoSave(card, flatId);
   });
-  alert('All flat calculations refreshed and saved!');
 }
 
 // Save All button handler
@@ -667,7 +521,7 @@ async function saveAllData() {
   const month = document.getElementById('monthSelector').value;
   try {
     await API.saveEntireMonth(month, currentMonthData.flats);
-    alert('All monthly bills saved successfully into database!');
+    alert('All monthly records saved successfully!');
   } catch (err) {
     alert('Failed to save month: ' + err.message);
   }
@@ -722,7 +576,5 @@ function renderOfflineFallback(month) {
 }
 
 window.switchWorkflowMode = switchWorkflowMode;
-window.setCardMode = setCardMode;
 window.recordFlatPayment = recordFlatPayment;
 window.deleteFlatPayment = deleteFlatPayment;
-window.saveSingleFlatBill = saveSingleFlatBill;
