@@ -225,7 +225,7 @@ function renderPaymentTable(data) {
       <td><span class="badge ${badgeClass}">${flat.payment_status || 'UNPAID'}</span></td>
       <td>
         <div style="display:flex; gap:6px; align-items:center; justify-content:center;">
-          <input type="number" id="payInput_${flat.flat_id}" placeholder="৳ Amount" step="0.01" />
+          <input type="number" id="payInput_${flat.flat_id}" placeholder="৳ Amount" step="1.0" />
           <select id="payMethod_${flat.flat_id}">
             <option value="Cash">Cash</option>
             <option value="bKash">bKash</option>
