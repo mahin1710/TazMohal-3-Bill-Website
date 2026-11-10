@@ -35,3 +35,4 @@ while ($true) {
     Write-Host "Next check in $intervalMinutes minutes...`n" -ForegroundColor DarkCyan
     Start-Sleep -Seconds $intervalSeconds
 }
+
