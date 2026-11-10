@@ -38,3 +38,4 @@ router.put('/:id', optionalAuth, (req, res) => {
 });
 
 module.exports = router;
+

@@ -426,3 +426,4 @@ function renderOfflineFallback(month) {
   renderFlatCards(dummyFlats, currentMonthData.settings);
   recalcOverallSummary();
 }
+
