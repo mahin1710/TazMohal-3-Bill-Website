@@ -434,15 +434,19 @@ header.app-header {
 /* Card Inputs Form */
 .input-group-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 16px;
+  width: 100%;
 }
 
 .input-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .input-field.full-width {
@@ -453,10 +457,17 @@ header.app-header {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .input-field input, .input-field select {
-  padding: 8px 10px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--bg-main);
@@ -467,7 +478,34 @@ header.app-header {
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.input-field input:focus, .input-field select:focus {
+.input-field input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input-field textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: vertical;
+  min-height: 56px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-x: hidden;
+}
+
+.input-field input:focus, .input-field select:focus, .input-field textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
 }
@@ -478,6 +516,10 @@ header.app-header {
   color: var(--danger);
   margin-top: 2px;
   display: none;
+}
+
+.calc-warning.full-width {
+  grid-column: 1 / -1;
 }
 
 .calc-warning.visible {

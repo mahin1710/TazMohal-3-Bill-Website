@@ -81,13 +81,37 @@ h2 {
 .flat-row label {
   display: block;
   margin-bottom: 10px;
-}
-.flat-row input {
   width: 100%;
-  padding: 8px;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.flat-row input, .flat-row textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 8px 12px;
   margin-top: 4px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.flat-row input:focus, .flat-row textarea:focus {
+  border-color: #004d66;
+  box-shadow: 0 0 0 3px rgba(0, 77, 102, 0.15);
+}
+.flat-row textarea {
+  resize: vertical;
+  min-height: 56px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-x: hidden;
+  line-height: 1.45;
 }
 .total-bill {
   font-weight: bold;
@@ -180,7 +204,7 @@ h2 {
   background: #2a2a2a;
   color: #fff;
 }
-.dark-mode input {
+.dark-mode input, .dark-mode textarea {
   background: #333;
   color: white;
   border: 1px solid #555;

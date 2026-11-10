@@ -94,7 +94,7 @@ test('Database: Default settings configured', () => {
 });
 
 test('Database: Save & update billing record (UPSERT)', () => {
-  const testMonth = '2026-11';
+  const testMonth = '1999-01'; // Isolated test month
   const stmt = db.prepare(`
     INSERT INTO billing_records (
       month, flat_id, previous_reading, current_reading, units_used,
@@ -111,6 +111,9 @@ test('Database: Save & update billing record (UPSERT)', () => {
   assert(rec !== undefined);
   assert.strictEqual(rec.total_payable, 9560);
   assert.strictEqual(rec.payment_status, 'Paid');
+
+  // Clean up test data immediately so production database stays clean
+  db.prepare('DELETE FROM billing_records WHERE month = ?').run(testMonth);
 });
 
 // 3. Security Tests

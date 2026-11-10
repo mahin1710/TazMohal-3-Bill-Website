@@ -4,8 +4,10 @@ function calculateFlatBill(flat) {
   const previous = parseFloat(flat.querySelector('.previous-reading').value) || 0;
   const rent = parseFloat(flat.querySelector('.house-rent').value) || 0;
   const due = parseFloat(flat.querySelector('.due-amount').value) || 0;
+  const notesEl = flat.querySelector('.notes-text');
+  const notes = notesEl ? notesEl.value : '';
 
-  const electricUsed = current - previous;
+  const electricUsed = Math.max(0, current - previous);
   const electricBill = electricUsed * 10 + 60; // 10 per unit + 60 base
   const total = electricBill + rent + due;
 
@@ -16,6 +18,7 @@ function calculateFlatBill(flat) {
     <p>Electric Bill: <strong>${electricBill.toFixed(2)}</strong> /=</p>
     <p>House Rent: <strong>${rent.toFixed(2)}</strong> /=</p>
     <p>Due Amount: <strong>${due.toFixed(2)}</strong> /=</p>
+    ${notes ? `<p>Notes: <em>${notes}</em></p>` : ''}
     <p style="margin-top:6px;">Total: <strong>${total.toFixed(2)}</strong> /=</p>
   `;
 
@@ -27,7 +30,8 @@ function calculateFlatBill(flat) {
     electricBill: electricBill,
     rent: rent,
     due: due,
-    total: total
+    total: total,
+    notes: notes
   };
 }
 

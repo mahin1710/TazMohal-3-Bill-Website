@@ -181,7 +181,7 @@ function renderFlatCards(flats, settings) {
           <label>Previous Meter Reading</label>
           <input type="number" step="0.01" class="input-prev" value="${flat.previous_reading || ''}" placeholder="0.00" />
         </div>
-        <div class="calc-warning" id="warning-${flat.flat_id}">Current reading is less than previous!</div>
+        <div class="calc-warning full-width" id="warning-${flat.flat_id}">Current reading is less than previous!</div>
 
         <div class="input-field">
           <label>House Rent (${sym})</label>
@@ -192,13 +192,14 @@ function renderFlatCards(flats, settings) {
           <input type="number" step="1" class="input-due" value="${flat.due_amount || ''}" placeholder="0" />
         </div>
 
-        <div class="input-field">
+        <div class="input-field full-width">
           <label>Amount Paid (${sym})</label>
           <input type="number" step="1" class="input-paid" value="${flat.amount_paid || ''}" placeholder="0" />
         </div>
-        <div class="input-field">
+        
+        <div class="input-field full-width">
           <label>Notes / Memo</label>
-          <input type="text" class="input-notes" value="${flat.notes || ''}" placeholder="Optional notes" />
+          <textarea class="input-notes" rows="2" placeholder="Write optional notes or memo...">${flat.notes || ''}</textarea>
         </div>
       </div>
 
