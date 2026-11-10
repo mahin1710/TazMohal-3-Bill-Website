@@ -1,11 +1,18 @@
+# ==============================================================
+# TazMohal-3 Billing Management — Security & Exclusion Rules
+# ==============================================================
+
 # Dependencies
 node_modules/
 package-lock.json
 
-# Environment & Credentials
+# Environment & Credentials (preserve .env.example)
 .env
 .env.local
 .env.*.local
+.env.production
+.env.development
+!.env.example
 
 # Database & Private Household Financial Records
 data/
@@ -16,16 +23,37 @@ data/
 *.db-wal
 *.db-shm
 
-# Backups & Exports containing private financial data
+# Private Backups & Local Exports
 backups/
 export/
+exports/
 *.xlsx
+*.xls
+*.csv
 *.pdf
 
-# Logs & System
+# Logs & Runtime Diagnostics
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor Specific Files
 .DS_Store
 Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
 
+# Temporary & Cache Files
+*.tmp
+*.bak
+*.swp
+*.swo
+.cache/
+build/
+dist/

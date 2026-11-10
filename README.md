@@ -5,7 +5,7 @@
 [![Database: SQLite (Built-in)](https://img.shields.io/badge/Database-SQLite%20(node%3Asqlite)-003B57?logo=sqlite)](https://sqlite.org/)
 [![UI: Modern Responsive](https://img.shields.io/badge/UI-Responsive%20%7C%20Light%20%26%20Dark%20Mode-0284c7)](#)
 [![Security: Bcrypt & JWT](https://img.shields.io/badge/Security-Bcrypt%20%26%20JWT%20Guarded-red)](#)
-[![Tests: 10/10 Passing](https://img.shields.io/badge/Tests-10%2F10%20Passing-brightgreen)](#)
+[![Tests: 11/11 Passing](https://img.shields.io/badge/Tests-11%2F11%20Passing-brightgreen)](#)
 
 > **TazMohal-3** (Uttarkhan, Uttara, Dhaka-1230, Bangladesh)  
 > A professional, secure, and modern residential property billing management system designed for multi-unit apartment buildings. Features real-time debounced live data saving into persistent SQLite storage, dynamic tariff configuration, payment tracking, Excel & printable PDF invoices, and automated disaster recovery backups.
@@ -301,41 +301,45 @@ node test/system.test.js
 
 ---
 
-## 📂 File Inventory & Changelog
+## 📂 File Inventory & Architecture
 
 ```plaintext
 TazMohal-3-Bill-Website/
-├── server/
-│   ├── index.js           # Express app, middlewares, static routes, auto-backup daemon
-│   ├── db.js              # SQLite database schema, WAL mode, seeds & helper methods
-│   ├── calculator.js      # Strict tariff calculation engine & floating-point controls
-│   ├── auth.js            # Bcrypt password hashing, JWT tokens, login rate limiting
-│   ├── billing.js         # Month billing records, debounced auto-save & localStorage migration
-│   ├── flats.js           # Flat directory & tenant metadata APIs
-│   ├── settings.js        # Dynamic tariff & property configuration APIs
-│   └── backup.js          # Snapshot creation, JSON dumps & pre-restore safety checkpoints
+├── index.html             # Primary Rent Calculator (Pay Bill) with Flat 1–9 cards
+├── paid-bill.html         # Dedicated Paid Bill & Tenant Payment Management
+├── summary.html           # Monthly Billing Summary Report & Analytics
+├── details.html           # Detailed electricity meter consumption breakdown
+├── styles.css             # Original primary stylesheet with light/dark mode
+├── script.js              # Client engine with live debounced SQLite auto-saving
+├── auto-sync.ps1          # Security-guarded 30-minute auto-sync script
+├── .env.example           # Safe environment variables configuration template
+├── .gitignore             # Strict security boundary guarding database & credentials
+├── .gitattributes         # Git line ending normalization rules
+├── package.json           # Node.js project manifest & scripts (start, dev, backup, test)
+├── README.md              # Comprehensive master system documentation
 │
-├── public/
-│   ├── index.html         # Modernized Dashboard with debounced live auto-save
-│   ├── summary.html       # Monthly Billing Summary & Analytics (resolves 404!)
-│   ├── details.html       # Detailed electricity meter consumption table
+├── public/                # Admin & Archive Static Views
 │   ├── history.html       # Monthly & Yearly billing history archives & search
 │   ├── settings.html      # Tariff settings, flat config & backup restore portal
 │   ├── login.html         # Secure admin login portal
 │   ├── css/
-│   │   └── modern.css     # Clean CSS, CSS variables, dark/light theme, print stylesheet
+│   │   └── modern.css     # CSS stylesheet for history, settings, and login
 │   └── js/
-│       ├── api.js         # Centralized REST client with debounced auto-save queue
-│       ├── app.js         # Dashboard controller, live calculation & migration trigger
-│       └── reports.js     # SheetJS Excel exporter & printable PDF invoice generator
+│       ├── api.js         # Centralized REST client for history & settings
+│       └── reports.js     # SheetJS Excel exporter & printable invoice generator
 │
-├── summary.html           # Root-level summary page for backward compatibility
-├── test/
-│   └── system.test.js     # 10-test automated verification suite
-├── .gitignore             # Strict security boundary guarding database & credentials
-├── auto-sync.ps1          # Security-guarded 10-minute auto git sync script
-├── package.json           # Node.js project manifest & scripts
-└── README.md              # Comprehensive master system documentation
+├── server/                # Secure Node.js Backend API
+│   ├── index.js           # Express app, static routing, auto-backup daemon
+│   ├── db.js              # SQLite database schema (WAL mode), seeds & audit logging
+│   ├── calculator.js      # Financial calculation engine & floating-point controls
+│   ├── auth.js            # Bcrypt password hashing, JWT tokens, login rate limiting
+│   ├── billing.js         # Monthly billing, live auto-save & automatic due carry-forward
+│   ├── flats.js           # Flat directory & tenant metadata APIs
+│   ├── settings.js        # Dynamic tariff & property configuration APIs
+│   └── backup.js          # Snapshot creation, JSON dumps & pre-restore safety checkpoints
+│
+└── test/
+    └── system.test.js     # 11-test automated verification test suite
 ```
 
 ---
