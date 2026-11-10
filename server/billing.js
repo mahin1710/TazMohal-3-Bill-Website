@@ -14,6 +14,15 @@ function getPreviousMonth(monthStr) {
   return `${y}-${m}`;
 }
 
+// Helper to get next month string YYYY-MM
+function getNextMonth(monthStr) {
+  const [year, month] = monthStr.split('-').map(Number);
+  const nextDate = new Date(year, month, 1);
+  const y = nextDate.getFullYear();
+  const m = String(nextDate.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
 // Helper to compute total payments recorded in payment_transactions
 function getFlatPaymentsSum(month, flatId) {
   const row = db.prepare(
@@ -440,59 +449,118 @@ router.post('/record-payment', optionalAuth, (req, res) => {
   });
 });
 
-// DELETE /api/billing/payment/:id
-// Reverses/deletes an incorrect payment transaction
-router.delete('/payment/:id', optionalAuth, (req, res) => {
-  const id = Number(req.params.id);
+// DELETE /api/billing/payment/:id AND /api/billing/delete-payment/:id
+// Reverses/deletes an incorrect payment transaction, recalculates balances and cascades carry-forward
+function handleDeletePayment(req, res) {
+  const rawId = req.params.id;
+  const id = Number(rawId);
+
+  if (!rawId || isNaN(id) || id <= 0) {
+    return res.status(400).json({ error: 'Invalid payment transaction ID' });
+  }
+
+  // 1. Check if transaction exists
   const tx = db.prepare('SELECT * FROM payment_transactions WHERE id = ?').get(id);
   if (!tx) {
-    return res.status(404).json({ error: 'Payment transaction not found' });
+    return res.status(404).json({ error: `Payment transaction #${id} not found or has already been deleted` });
   }
 
-  db.prepare('DELETE FROM payment_transactions WHERE id = ?').run(id);
+  try {
+    // 2. Delete transaction
+    db.prepare('DELETE FROM payment_transactions WHERE id = ?').run(id);
 
-  // Recalculate total paid
-  const totalPaid = getFlatPaymentsSum(tx.month, tx.flat_id);
+    // 3. Recalculate total paid for this flat and month
+    const totalPaid = getFlatPaymentsSum(tx.month, tx.flat_id);
 
-  const billingRec = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = ?').get(tx.month, tx.flat_id);
-  if (billingRec) {
-    const totalPayable = Number(billingRec.total_payable) || 0;
-    let newStatus = 'UNPAID';
-    if (totalPaid >= totalPayable && totalPayable > 0) {
-      newStatus = 'PAID';
-    } else if (totalPaid > 0 && totalPaid < totalPayable) {
-      newStatus = 'PARTIALLY PAID';
+    // 4. Update the flat's billing record
+    const billingRec = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = ?').get(tx.month, tx.flat_id);
+    let updatedRec = null;
+
+    if (billingRec) {
+      const totalPayable = Number(billingRec.total_payable) || 0;
+      let newStatus = 'UNPAID';
+      if (totalPaid >= totalPayable && totalPayable > 0) {
+        newStatus = 'PAID';
+      } else if (totalPaid > 0 && totalPaid < totalPayable) {
+        newStatus = 'PARTIALLY PAID';
+      }
+
+      db.prepare(`
+        UPDATE billing_records
+        SET amount_paid = ?, payment_status = ?, updated_at = datetime('now', 'localtime')
+        WHERE month = ? AND flat_id = ?
+      `).run(totalPaid, newStatus, tx.month, tx.flat_id);
+
+      updatedRec = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = ?').get(tx.month, tx.flat_id);
     }
 
-    db.prepare(`
-      UPDATE billing_records
-      SET amount_paid = ?, payment_status = ?, updated_at = datetime('now', 'localtime')
-      WHERE month = ? AND flat_id = ?
-    `).run(totalPaid, newStatus, tx.month, tx.flat_id);
+    // 5. Audit log
+    logAudit(
+      'DELETE_PAYMENT',
+      `Deleted payment ID ${id} of ৳${tx.amount} (${tx.payment_method}) for Flat ${tx.flat_id} in ${tx.month}`,
+      req.user ? req.user.username : 'user'
+    );
+
+    // 6. Recalculate dependent carry-forward for the immediately following month (if next month record exists)
+    const nextMonthStr = getNextMonth(tx.month);
+    const nextRec = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = ?').get(nextMonthStr, tx.flat_id);
+    if (nextRec && updatedRec) {
+      const carriedDue = Math.max(0, roundCurrency((Number(updatedRec.total_payable) || 0) - (Number(updatedRec.amount_paid) || 0)));
+      const nextSettings = getSettings();
+      const nextUnitRate = parseFloat(nextSettings.unit_rate) || 10;
+      const nextMeterCharge = parseFloat(nextSettings.meter_charge) || 60;
+      const nextPaid = getFlatPaymentsSum(nextMonthStr, tx.flat_id);
+
+      const nextCalc = calculateBill({
+        currentReading: nextRec.current_reading,
+        previousReading: nextRec.previous_reading,
+        houseRent: nextRec.house_rent,
+        dueAmount: carriedDue,
+        unitRate: nextUnitRate,
+        meterCharge: nextMeterCharge,
+        amountPaid: nextPaid
+      });
+
+      db.prepare(`
+        UPDATE billing_records
+        SET due_amount = ?, total_payable = ?, payment_status = ?, updated_at = datetime('now', 'localtime')
+        WHERE month = ? AND flat_id = ?
+      `).run(nextCalc.dueAmount, nextCalc.totalPayable, nextCalc.paymentStatus, nextMonthStr, tx.flat_id);
+    }
+
+    // 7. Retrieve remaining payments
+    const remainingPayments = db.prepare(
+      'SELECT * FROM payment_transactions WHERE month = ? AND flat_id = ? ORDER BY payment_date ASC, id ASC'
+    ).all(tx.month, tx.flat_id);
+
+    if (updatedRec) {
+      updatedRec.remaining_due = Math.max(0, roundCurrency(updatedRec.total_payable - updatedRec.amount_paid));
+      updatedRec.payments = remainingPayments;
+    }
+
+    return res.json({
+      success: true,
+      message: 'Payment transaction deleted successfully',
+      deletedTransaction: {
+        id: tx.id,
+        amount: tx.amount,
+        flat_id: tx.flat_id,
+        month: tx.month,
+        payment_date: tx.payment_date,
+        payment_method: tx.payment_method
+      },
+      record: updatedRec,
+      payments: remainingPayments
+    });
+  } catch (err) {
+    console.error('Error during payment deletion:', err);
+    return res.status(500).json({ error: 'Database error occurred while deleting payment: ' + err.message });
   }
+}
 
-  logAudit(
-    'DELETE_PAYMENT',
-    `Deleted payment ID ${id} of ৳${tx.amount} for Flat ${tx.flat_id} in ${tx.month}`,
-    req.user ? req.user.username : 'user'
-  );
-
-  const updatedRec = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = ?').get(tx.month, tx.flat_id);
-  const payments = db.prepare(
-    'SELECT * FROM payment_transactions WHERE month = ? AND flat_id = ? ORDER BY payment_date ASC, id ASC'
-  ).all(tx.month, tx.flat_id);
-
-  if (updatedRec) {
-    updatedRec.remaining_due = Math.max(0, roundCurrency(updatedRec.total_payable - updatedRec.amount_paid));
-    updatedRec.payments = payments;
-  }
-
-  res.json({
-    message: 'Payment transaction deleted successfully',
-    record: updatedRec,
-    payments
-  });
-});
+// Support both endpoint paths for complete compatibility:
+router.delete('/payment/:id', optionalAuth, handleDeletePayment);
+router.delete('/delete-payment/:id', optionalAuth, handleDeletePayment);
 
 // GET /api/billing/payment-report/:month
 // Comprehensive report of all payment transactions collected in a month

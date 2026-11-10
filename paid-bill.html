@@ -243,7 +243,7 @@ function renderPaymentTable(data) {
           ${hasHistory ? paymentsList.map(p => `
             <div class="tx-item">
               <span><strong>৳ ${Number(p.amount).toFixed(2)}</strong> (${p.payment_method}) - <small>${p.payment_date}</small></span>
-              <button class="btn-del-tx" title="Delete payment" onclick="deletePayment(${p.id})">✕</button>
+              <button class="btn-del-tx" title="Delete payment" onclick="deletePayment(${p.id}, ${p.amount}, ${flat.flat_number || flat.flat_id}, '${p.payment_date}')">✕</button>
             </div>
           `).join('') : '<span style="color:#888;">No payments recorded yet.</span>'}
         </div>
@@ -299,21 +299,36 @@ async function recordPayment(flatId) {
   }
 }
 
-async function deletePayment(txId) {
-  if (!confirm('Are you sure you want to remove this payment entry? The due will be recalculated.')) return;
+async function deletePayment(txId, amount, flatNumber, date) {
+  const displayAmount = amount ? '৳' + Number(amount).toFixed(2) : 'this payment';
+  const displayFlat = flatNumber ? `Flat ${flatNumber}` : 'this flat';
+  const displayDate = date || 'recorded date';
+
+  const confirmMsg = `Are you sure you want to delete this payment transaction?\n\n` +
+    `• Flat: ${displayFlat}\n` +
+    `• Amount: ${displayAmount}\n` +
+    `• Date: ${displayDate}\n\n` +
+    `This will reverse the payment, update the remaining due, and recalculate balances.`;
+
+  if (!confirm(confirmMsg)) return;
 
   try {
     const res = await fetch(`/api/billing/delete-payment/${txId}`, {
       method: 'DELETE'
     });
+
+    const result = await res.json();
+
     if (!res.ok) {
-      const err = await res.json();
-      alert('Error: ' + (err.error || 'Failed to delete'));
+      alert('Delete failed: ' + (result.error || 'Unable to delete payment transaction.'));
       return;
     }
-    loadPaidBillData();
+
+    // Immediately reload data to update all balances, history, badges, and dashboard metrics
+    await loadPaidBillData();
   } catch (err) {
-    alert('Failed to delete payment transaction.');
+    console.error('Delete request error:', err);
+    alert('Network error: Failed to connect to server to delete payment.');
   }
 }
 

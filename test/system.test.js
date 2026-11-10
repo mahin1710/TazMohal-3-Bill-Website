@@ -227,6 +227,66 @@ test('Backup: Snapshot generation creates valid backup file', () => {
   assert(fs.existsSync(path.join(__dirname, '../backups', backup.jsonFilename)));
 });
 
+// 5. Payment Transaction & Deletion Workflow Tests
+test('Payment Deletion: Multi-payment deletion, status recalculation & carry-forward cascade', () => {
+  const m1 = '2088-01';
+  const m2 = '2088-02';
+
+  // 1. Setup month 1 bill: Flat 1 Total Payable = ৳10,000
+  db.prepare(`
+    INSERT INTO billing_records (month, flat_id, previous_reading, current_reading, units_used, unit_rate, meter_charge, electricity_bill, house_rent, due_amount, total_payable, amount_paid, payment_status)
+    VALUES (?, 1, 100, 200, 100, 10, 60, 1060, 8940, 0, 10000, 0, 'UNPAID')
+  `).run(m1);
+
+  // 2. Insert 3 payments: ৳3000, ৳2000, ৳1000 (Total = ৳6000, Remaining = ৳4000)
+  const p1 = db.prepare('INSERT INTO payment_transactions (month, flat_id, amount, payment_date, payment_method, notes) VALUES (?, 1, 3000, \'2088-01-05\', \'Cash\', \'Payment 1\')').run(m1);
+  const p2 = db.prepare('INSERT INTO payment_transactions (month, flat_id, amount, payment_date, payment_method, notes) VALUES (?, 1, 2000, \'2088-01-10\', \'bKash\', \'Payment 2\')').run(m1);
+  const p3 = db.prepare('INSERT INTO payment_transactions (month, flat_id, amount, payment_date, payment_method, notes) VALUES (?, 1, 1000, \'2088-01-15\', \'Nagad\', \'Payment 3\')').run(m1);
+
+  db.prepare('UPDATE billing_records SET amount_paid = 6000, payment_status = \'PARTIALLY PAID\' WHERE month = ? AND flat_id = 1').run(m1);
+
+  // 3. Setup month 2 with carried due = ৳4000
+  db.prepare(`
+    INSERT INTO billing_records (month, flat_id, previous_reading, current_reading, units_used, unit_rate, meter_charge, electricity_bill, house_rent, due_amount, total_payable, amount_paid, payment_status)
+    VALUES (?, 1, 200, 250, 50, 10, 60, 560, 8000, 4000, 12560, 0, 'UNPAID')
+  `).run(m2);
+
+  // 4. Test deleting payment 2 (৳2000)
+  const tx2Id = Number(p2.lastInsertRowid);
+  db.prepare('DELETE FROM payment_transactions WHERE id = ?').run(tx2Id);
+
+  // Recalculate payments sum
+  const sumAfterDel = db.prepare('SELECT COALESCE(SUM(amount), 0) as total FROM payment_transactions WHERE month = ? AND flat_id = 1').get(m1).total;
+  assert.strictEqual(sumAfterDel, 4000); // 3000 + 1000
+
+  // Update month 1 record
+  let newStatus = 'PARTIALLY PAID';
+  db.prepare('UPDATE billing_records SET amount_paid = ?, payment_status = ? WHERE month = ? AND flat_id = 1').run(sumAfterDel, newStatus, m1);
+
+  const m1Rec = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = 1').get(m1);
+  assert.strictEqual(m1Rec.amount_paid, 4000);
+  assert.strictEqual(m1Rec.total_payable - m1Rec.amount_paid, 6000); // Remaining due increased to 6000
+  assert.strictEqual(m1Rec.payment_status, 'PARTIALLY PAID');
+
+  // Verify next month carry forward cascade:
+  const newCarriedDue = m1Rec.total_payable - m1Rec.amount_paid;
+  assert.strictEqual(newCarriedDue, 6000);
+
+  // 5. Delete remaining payments (p1 and p3)
+  db.prepare('DELETE FROM payment_transactions WHERE id IN (?, ?)').run(Number(p1.lastInsertRowid), Number(p3.lastInsertRowid));
+  const sumZero = db.prepare('SELECT COALESCE(SUM(amount), 0) as total FROM payment_transactions WHERE month = ? AND flat_id = 1').get(m1).total;
+  assert.strictEqual(sumZero, 0);
+
+  db.prepare('UPDATE billing_records SET amount_paid = 0, payment_status = \'UNPAID\' WHERE month = ? AND flat_id = 1').run(m1);
+  const m1Final = db.prepare('SELECT * FROM billing_records WHERE month = ? AND flat_id = 1').get(m1);
+  assert.strictEqual(m1Final.amount_paid, 0);
+  assert.strictEqual(m1Final.payment_status, 'UNPAID');
+
+  // 6. Cleanup test records
+  db.prepare('DELETE FROM billing_records WHERE month IN (?, ?)').run(m1, m2);
+  db.prepare('DELETE FROM payment_transactions WHERE month IN (?, ?)').run(m1, m2);
+});
+
 console.log('==================================================');
 console.log(` Summary: ${passedTests} / ${totalTests} Tests Passed successfully!`);
 console.log('==================================================');
