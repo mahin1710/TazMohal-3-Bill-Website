@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment & Credentials
+.env
+.env.local
+.env.*.local
+
+# Database & Private Household Financial Records
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Backups & Exports containing private financial data
+backups/
+export/
+*.xlsx
+*.pdf
+
+# Logs & System
+logs/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
