@@ -1,13 +1,13 @@
 # ==============================================================
 # TazMohal 3 Bill Website - Safe Auto Git Sync Script
-# Runs every 10 minutes (600 seconds)
+# Runs every 30 minutes (1800 seconds)
 # Protects private financial records and pushes only source code.
 # ==============================================================
 
 $repoPath = $PSScriptRoot
 Set-Location $repoPath
 
-$intervalMinutes = 10
+$intervalMinutes = 30
 $intervalSeconds = $intervalMinutes * 60
 
 Write-Host "==================================================" -ForegroundColor Cyan
