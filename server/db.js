@@ -56,12 +56,25 @@ db.exec(`
     due_amount REAL DEFAULT 0,
     total_payable REAL DEFAULT 0,
     amount_paid REAL DEFAULT 0,
-    payment_status TEXT DEFAULT 'Unpaid',
+    payment_status TEXT DEFAULT 'UNPAID',
     notes TEXT DEFAULT '',
     updated_at TEXT DEFAULT (datetime('now', 'localtime')),
     UNIQUE(month, flat_id),
     FOREIGN KEY (flat_id) REFERENCES flats(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS payment_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    month TEXT NOT NULL,
+    flat_id INTEGER NOT NULL,
+    amount REAL NOT NULL,
+    payment_date TEXT NOT NULL,
+    payment_method TEXT DEFAULT 'Cash',
+    notes TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now', 'localtime')),
+    FOREIGN KEY (flat_id) REFERENCES flats(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_payments_month_flat ON payment_transactions(month, flat_id);
 
   CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -36,14 +36,15 @@ function calculateBill({
   // Electricity bill = (units * unitRate) + meterCharge (if units > 0 or base charge applies)
   const electricityBill = roundCurrency((units * rate) + baseCharge);
   const totalPayable = roundCurrency(electricityBill + rent + due);
+  const remainingDue = Math.max(0, roundCurrency(totalPayable - paid));
 
-  let paymentStatus = 'Unpaid';
+  let paymentStatus = 'UNPAID';
   if (paid >= totalPayable && totalPayable > 0) {
-    paymentStatus = 'Paid';
+    paymentStatus = 'PAID';
   } else if (paid > 0 && paid < totalPayable) {
-    paymentStatus = 'Partial';
+    paymentStatus = 'PARTIALLY PAID';
   } else if (totalPayable === 0 && paid === 0) {
-    paymentStatus = 'Paid';
+    paymentStatus = 'PAID';
   }
 
   return {
@@ -57,6 +58,7 @@ function calculateBill({
     dueAmount: due,
     totalPayable,
     amountPaid: paid,
+    remainingDue,
     paymentStatus,
     validationWarning
   };

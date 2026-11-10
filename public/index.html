@@ -77,15 +77,25 @@
       </div>
     </section>
 
+    <!-- Two Separate Monthly Workflow Options -->
+    <section class="workflow-nav">
+      <button class="workflow-tab-btn active" id="tabPayBill" onclick="switchWorkflowMode('pay')">
+        ⚡ OPTION 1: PAY BILL (Generate & Calculate)
+      </button>
+      <button class="workflow-tab-btn" id="tabPaidBill" onclick="switchWorkflowMode('paid')">
+        💰 OPTION 2: PAID BILL (Record Payments & Ledger)
+      </button>
+    </section>
+
     <!-- Action Toolbar -->
     <section class="action-bar">
-      <div style="font-size: 0.95rem; font-weight: 600; color: var(--primary);">
-        ⚡ Live Auto-Save Enabled (Type in any field to automatically save)
+      <div id="modeGuidanceText" style="font-size: 0.95rem; font-weight: 600; color: var(--primary);">
+        ⚡ Option 1 (Pay Bill): Enter readings & review rent. Previous readings and remaining dues are automatically carried forward.
       </div>
 
-      <div class="action-buttons">
+      <div class="action-buttons" id="actionBarButtons">
         <button class="btn btn-outline" onclick="calculateAll()">⚡ Recalculate All</button>
-        <button class="btn btn-primary" onclick="saveAllData()">💾 Save All</button>
+        <button class="btn btn-primary" onclick="saveAllData()">💾 Save All Monthly Bills</button>
         <button class="btn btn-success" onclick="downloadMonthlyExcel()">📥 Download Month Excel</button>
         <a href="summary.html" class="btn btn-outline">📊 View Summary</a>
       </div>

@@ -71,6 +71,7 @@
       <div class="action-buttons">
         <a href="index.html" class="btn btn-outline">⬅ Back to Dashboard</a>
         <button class="btn btn-success" onclick="downloadExcel()">📥 Download Month Excel</button>
+        <button class="btn btn-outline" onclick="downloadPaymentsLedger()">💳 Download Payment Ledger</button>
         <button class="btn btn-primary" onclick="window.print()">🖨️ Print Summary Sheet / PDF</button>
       </div>
     </section>
@@ -208,6 +209,13 @@
     function downloadExcel() {
       if (summaryData) {
         Reports.downloadMonthlyExcel(summaryData.month, summaryData.flats, summaryData.settings);
+      }
+    }
+
+    function downloadPaymentsLedger() {
+      const month = document.getElementById('summaryMonthSelector').value;
+      if (summaryData) {
+        Reports.downloadPaymentReport(month, summaryData.settings);
       }
     }
   </script>

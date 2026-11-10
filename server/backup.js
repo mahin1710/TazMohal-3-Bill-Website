@@ -38,6 +38,7 @@ function performBackup() {
     settings: db.prepare('SELECT * FROM settings').all(),
     flats: db.prepare('SELECT * FROM flats').all(),
     billing_records: db.prepare('SELECT * FROM billing_records').all(),
+    payment_transactions: db.prepare('SELECT * FROM payment_transactions').all(),
     audit_logs: db.prepare('SELECT * FROM audit_logs ORDER BY id DESC LIMIT 500').all()
   };
   const jsonFilename = `tazmohal_backup_${ts}.json`;
@@ -150,7 +151,21 @@ router.post('/restore', optionalAuth, (req, res) => {
             b.id || null, b.month, b.flat_id, b.previous_reading || 0, b.current_reading || 0,
             b.units_used || 0, b.unit_rate || 10, b.meter_charge || 60, b.electricity_bill || 0,
             b.house_rent || 0, b.due_amount || 0, b.total_payable || 0, b.amount_paid || 0,
-            b.payment_status || 'Unpaid', b.notes || '', b.updated_at || new Date().toISOString()
+            b.payment_status || 'UNPAID', b.notes || '', b.updated_at || new Date().toISOString()
+          );
+        }
+      }
+
+      if (data.payment_transactions && Array.isArray(data.payment_transactions)) {
+        const stmt = db.prepare(`
+          INSERT OR REPLACE INTO payment_transactions (
+            id, month, flat_id, amount, payment_date, payment_method, notes, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        for (const p of data.payment_transactions) {
+          stmt.run(
+            p.id || null, p.month, p.flat_id, p.amount || 0, p.payment_date || new Date().toISOString().split('T')[0],
+            p.payment_method || 'Cash', p.notes || '', p.created_at || new Date().toISOString()
           );
         }
       }

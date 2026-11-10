@@ -102,7 +102,28 @@ In Version 2.0, TazMohal-3 has evolved from a static client-side calculator into
 - Custom tenant names, contact telephone numbers, and notes.
 - Default rent presets that automatically populate upon month selection.
 
-### 2. ⚡ Live Debounced Auto-Save
+### 2. ⚡ Option 1: PAY BILL (Generate & Calculate)
+- Generate and calculate monthly bills across all 9 flats without prematurely recording payments.
+- **Automatic Carry-Forward from Previous Month**:
+  - Automatically retrieves previous month's **Current Meter Reading** as the new **Previous Reading**.
+  - Automatically transfers previous month's **Final Remaining Due** ($\text{Total Payable} - \text{Total Paid}$) as the new **Previous Due**.
+  - Auto-retrieves previous rent and tenant metadata.
+- Clear itemized breakdown: Units Consumed, Electricity Bill, House Rent, Prior Carried Due, and Total Monthly Bill.
+- Independent bill saving with status: `BILL GENERATED` / `UNPAID`.
+
+### 3. 💰 Option 2: PAID BILL (Record Payments & Multi-Installment Ledger)
+- Independent payment tracking for each flat:
+  - Supports **Full Payment**, **Partial Payment**, and **Multiple Installments** in the same month.
+  - Records payment date, payment amount, payment method (Cash, Bank Transfer, bKash, Nagad, Rocket, Other), and payment note.
+  - Automatically computes remaining due: $\text{Remaining Due} = \text{Total Payable} - \text{Total Paid}$.
+  - Dynamic status transitions:
+    - $\text{Total Paid} \ge \text{Total Payable} \implies \textbf{PAID}$
+    - $0 < \text{Total Paid} < \text{Total Payable} \implies \textbf{PARTIALLY PAID}$
+    - $\text{Total Paid} = 0 \implies \textbf{UNPAID}$
+- Maintains an append-only transaction ledger (`payment_transactions`) with transaction timestamps and delete/undo options.
+- Generates dedicated **Payment Collection Ledger Excel Reports**.
+
+### 4. ⚡ Live Debounced Auto-Save
 - Type in any meter reading, rent, or due field: changes are queued and saved within 600ms.
 - Visual save badge in header reflects real-time synchronization:
   - `<span>💾</span> All changes saved`

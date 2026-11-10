@@ -106,6 +106,23 @@ const API = {
     return this.request('/api/billing/history');
   },
 
+  async recordPayment(payload) {
+    return this.request('/api/billing/record-payment', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  },
+
+  async deletePayment(id) {
+    return this.request(`/api/billing/payment/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getPaymentReport(month) {
+    return this.request(`/api/billing/payment-report/${month}`);
+  },
+
   async getYearlyBilling(year) {
     return this.request(`/api/billing/yearly/${year}`);
   },
